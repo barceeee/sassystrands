@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Staff Login | Sassy Strands</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    :root {
+      --white: #ffffff;
+      --soft: #fafafa;
+      --off: #f6f6f4;
+      --border: #e5e5e5;
+      --text: #1d1d1d;
+      --muted: #737373;
+      --black: #111111;
+      --green: #06451d;
+      --green-hover: #0b6a2d;
+      --lime: #22d834;
+      --danger: #a23b2c;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 25px;
+      background: white;
+      color: var(--text);
+      font-family: "Source Serif 4", Georgia, serif;
+      display: grid;
+      place-items: center;
+    }
+
+    .wrap {
+      width: min(1030px, 100%);
+      min-height: 610px;
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      background: white;
+      border: 1px solid var(--border);
+    }
+
+    .intro {
+      position: relative;
+      overflow: hidden;
+      padding: 52px 45px;
+      background: var(--off);
+      border-right: 1px solid var(--border);
+    }
+
+    .intro::after {
+      content: "";
+      position: absolute;
+      width: 420px;
+      height: 420px;
+      bottom: -280px;
+      left: -140px;
+      border: 38px solid var(--green);
+      border-radius: 50%;
+      opacity: 0.09;
+    }
+
+    .logo {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-mark {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--black);
+      color: white;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .logo strong {
+      display: block;
+      font-size: 23px;
+    }
+
+    .logo small {
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 1.4px;
+    }
+
+    .intro-copy {
+      position: relative;
+      z-index: 1;
+      margin-top: 115px;
+    }
+
+    .intro h1 {
+      margin: 0 0 19px;
+      color: var(--black);
+      font-size: 50px;
+      font-weight: 500;
+      line-height: 0.98;
+    }
+
+    .intro p {
+      max-width: 300px;
+      color: #555555;
+      font-size: 18px;
+      line-height: 1.55;
+    }
+
+    .safe {
+      position: absolute;
+      z-index: 1;
+      right: 45px;
+      bottom: 48px;
+      left: 45px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .safe b {
+      color: var(--green);
+    }
+
+    .form-side {
+      display: flex;
+      align-items: center;
+      padding: 55px 9%;
+    }
+
+    .form-box {
+      width: 100%;
+    }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 43px;
+      color: var(--black);
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .back:hover {
+      color: var(--green);
+    }
+
+    .form-box h2 {
+      margin: 0;
+      color: var(--black);
+      font-size: 40px;
+      font-weight: 500;
+      line-height: 1;
+    }
+
+    .form-box > p {
+      margin: 12px 0 28px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .form-box label {
+      display: block;
+      margin: 16px 0 7px;
+      color: #303030;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .form-box input,
+    .form-box select {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid var(--border);
+      border-radius: 0;
+      background: white;
+      color: var(--text);
+      font: inherit;
+    }
+
+    .form-box input:focus,
+    .form-box select:focus {
+      outline: 1px solid var(--black);
+      border-color: var(--black);
+    }
+
+    .login {
+      width: 100%;
+      margin-top: 25px;
+      padding: 14px 20px;
+      border: 1px solid var(--black);
+      border-radius: 2px;
+      background: var(--black);
+      color: white;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .login:hover {
+      border-color: var(--green);
+      background: var(--green);
+    }
+
+    .demo {
+      margin-top: 23px;
+      padding: 13px 15px;
+      border-left: 3px solid var(--green);
+      background: var(--soft);
+      color: #565656;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .error {
+      display: none;
+      margin-top: 14px;
+      color: var(--danger);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .footer-note {
+      margin-top: 25px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    @media (max-width: 760px) {
+      .wrap {
+        grid-template-columns: 1fr;
+      }
+
+      .intro {
+        min-height: 310px;
+        padding: 34px;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .intro-copy {
+        margin-top: 55px;
+      }
+
+      .intro h1 {
+        font-size: 39px;
+      }
+
+      .safe {
+        display: none;
+      }
+
+      .form-side {
+        padding: 38px 28px;
+      }
+
+      .back {
+        margin-bottom: 25px;
+      }
+    }
+
+    @media (max-width: 430px) {
+      body {
+        padding: 0;
+      }
+
+      .wrap {
+        min-height: 100vh;
+        border: 0;
+      }
+
+      .intro {
+        min-height: 280px;
+      }
+
+      .form-box h2 {
+        font-size: 34px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="wrap">
+    <section class="intro">
+      <div class="logo">
+        <div class="logo-mark">S</div>
+
+        <div>
+          <strong>Sassy Strands</strong>
+          <small>FILIPINO HAIR</small>
+        </div>
+      </div>
+
+      <div class="intro-copy">
+        <h1>
+          Staff
+          <br />
+          workspace.
+        </h1>
+
+        <p>
+          Authorized team members can review the internal prototype according
+          to their assigned role.
+        </p>
+      </div>
+
+      <div class="safe">
+        <b>Prototype access</b>
+        <br />
+        This page is for client-review demonstration only.
+      </div>
+    </section>
+
+    <section class="form-side">
+      <div class="form-box">
+        <a class="back" href="sassy-strands-storefront-white.html">
+          ← Back to storefront
+        </a>
+
+        <h2>Staff sign in</h2>
+
+        <p>
+          Use any sample email and password, then choose a role to preview the
+          role-based portal.
+        </p>
+
+        <form onsubmit="return signIn(event)">
+          <label for="email">Work email</label>
+
+          <input
+            id="email"
+            type="email"
+            placeholder="name@sassystrands.com"
+            required
+          />
+
+          <label for="password">Password</label>
+
+          <input
+            id="password"
+            type="password"
+            placeholder="Enter your password"
+            required
+          />
+
+          <label for="demoRole">Prototype role preview</label>
+
+          <select id="demoRole">
+            <option value="Owner">Owner</option>
+            <option value="Admin">Admin</option>
+            <option value="Inventory">Inventory</option>
+            <option value="Production">Production</option>
+            <option value="QA">QA</option>
+          </select>
+
+          <button class="login" type="submit">
+            Sign in to preview
+          </button>
+
+          <div id="error" class="error">
+            Please enter a valid email and password to continue.
+          </div>
+        </form>
+
+        <div class="demo">
+          Client-review prototype only. Login details are not stored or
+          verified. A future live version can replace this with secure
+          authentication.
+        </div>
+
+        <div class="footer-note">
+          Sassy Strands Filipino Hair · Internal prototype
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function signIn(event) {
+      event.preventDefault();
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const role = document.getElementById("demoRole").value;
+      const error = document.getElementById("error");
+
+      if (!email || !password) {
+        error.style.display = "block";
+        return false;
+      }
+
+      sessionStorage.setItem("sassyStrandsDemoRole", role);
+
+      window.location.href = "staff-portal-white.html";
+
+      return false;
+    }
+  </script>
+</body>
+</html>
