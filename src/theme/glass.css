@@ -1,0 +1,145 @@
+/*
+  Glass building blocks. Every value comes from the theme's --ss-glass-* tokens.
+
+  Use on any element:
+    .glass                 card surface (default)
+    .glass--surface        same, explicit
+    .glass--raised         modals and dialogs
+    .glass--subtle         chrome, nested tiles, the tab track
+    .glass--control        buttons
+    .glass--strong         primary buttons (graphite glass, pearl text)
+    .glass--selected       the chosen item in a set (active tab, current page)
+    .glass--interactive    adds the hover lift to any variant
+
+  The app's existing primitives inherit the same recipe without markup changes; they are
+  listed beside the matching variant below. A variant only sets private --_glass-* inputs;
+  the recipe that paints them is written once.
+*/
+
+/* ---- Variants: which tokens feed the recipe ---------------------------------------------- */
+
+:where(.glass, .glass--surface, .card, .stat, .stage-col, .table-wrap) {
+  --_glass-bg: var(--ss-glass-surface-bg);
+  --_glass-bg-hover: var(--ss-glass-surface-bg-hover);
+  --_glass-border: var(--ss-glass-surface-border);
+  --_glass-blur: var(--ss-glass-surface-blur);
+  --_glass-shadow: var(--ss-glass-surface-shadow);
+  --_glass-fallback: var(--ss-glass-surface-fallback);
+}
+
+:where(.glass--subtle, .job, .topbar, .sidebar, .tabs) {
+  --_glass-bg: var(--ss-glass-subtle-bg);
+  --_glass-bg-hover: var(--ss-glass-subtle-bg-hover);
+  --_glass-border: var(--ss-glass-subtle-border);
+  --_glass-blur: var(--ss-glass-subtle-blur);
+  --_glass-shadow: var(--ss-glass-subtle-shadow);
+  --_glass-fallback: var(--ss-glass-subtle-fallback);
+}
+
+:where(.glass--control, button:not(.link, .tabs button), .button) {
+  --_glass-bg: var(--ss-glass-control-bg);
+  --_glass-bg-hover: var(--ss-glass-control-bg-hover);
+  --_glass-border: var(--ss-glass-control-border);
+  --_glass-blur: var(--ss-glass-control-blur);
+  --_glass-shadow: var(--ss-glass-control-shadow);
+  --_glass-fallback: var(--ss-glass-control-fallback);
+}
+
+:where(.glass--strong, button.primary, .button.primary) {
+  --_glass-bg: var(--ss-glass-strong-bg);
+  --_glass-bg-hover: var(--ss-glass-strong-bg-hover);
+  --_glass-border: var(--ss-glass-strong-border);
+  --_glass-blur: var(--ss-glass-strong-blur);
+  --_glass-shadow: var(--ss-glass-strong-shadow);
+  --_glass-fallback: var(--ss-glass-strong-fallback);
+  color: var(--ss-color-on-strong);
+}
+
+:where(.glass--selected, .tabs button.active, .tabs button[aria-selected="true"], .sidebar a.active) {
+  --_glass-bg: var(--ss-glass-selected-bg);
+  --_glass-bg-hover: var(--ss-glass-selected-bg-hover);
+  --_glass-border: var(--ss-glass-selected-border);
+  --_glass-blur: var(--ss-glass-selected-blur);
+  --_glass-shadow: var(--ss-glass-selected-shadow);
+  --_glass-fallback: var(--ss-glass-selected-fallback);
+  color: var(--ss-color-on-strong);
+}
+
+:where(.glass--raised, .modal) {
+  --_glass-bg: var(--ss-glass-raised-bg);
+  --_glass-bg-hover: var(--ss-glass-raised-bg-hover);
+  --_glass-border: var(--ss-glass-raised-border);
+  --_glass-blur: var(--ss-glass-raised-blur);
+  --_glass-shadow: var(--ss-glass-raised-shadow);
+  --_glass-fallback: var(--ss-glass-raised-fallback);
+}
+
+/* ---- Recipe ------------------------------------------------------------------------------ */
+
+/* Opaque first, so browsers without backdrop-filter get a solid, legible fill. */
+:where(
+  .glass, .glass--surface, .glass--subtle, .glass--control, .glass--strong, .glass--selected, .glass--raised,
+  .card, .stat, .stage-col, .table-wrap, .job, .topbar, .sidebar, .tabs, .modal,
+  button:not(.link, .tabs button), .button,
+  .tabs button.active, .tabs button[aria-selected="true"], .sidebar a.active
+) {
+  background: var(--_glass-fallback);
+  transition:
+    background-color var(--ss-motion-fast) var(--ss-motion-ease),
+    box-shadow var(--ss-motion-fast) var(--ss-motion-ease),
+    color var(--ss-motion-fast) var(--ss-motion-ease);
+}
+
+/* Framed hosts get the light border and soft shadow; chrome (top bar, sidebar) keeps its own edges. */
+:where(
+  .glass, .glass--surface, .glass--subtle, .glass--control, .glass--strong, .glass--selected, .glass--raised,
+  .card, .stat, .stage-col, .table-wrap, .job, .tabs, .modal,
+  button:not(.link, .tabs button), .button,
+  .tabs button.active, .tabs button[aria-selected="true"], .sidebar a.active
+) {
+  border: 1px solid var(--_glass-border);
+  box-shadow: var(--ss-glass-highlight), var(--_glass-shadow);
+}
+/* Dark silhouettes take a fainter top highlight. */
+:where(.glass--strong, .glass--selected, button.primary, .button.primary, .tabs button.active, .tabs button[aria-selected="true"], .sidebar a.active) {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), var(--_glass-shadow);
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  :where(
+    .glass, .glass--surface, .glass--subtle, .glass--control, .glass--strong, .glass--selected, .glass--raised,
+    .card, .stat, .stage-col, .table-wrap, .job, .topbar, .sidebar, .tabs, .modal,
+    button:not(.link, .tabs button), .button,
+    .tabs button.active, .tabs button[aria-selected="true"], .sidebar a.active
+  ) {
+    background: var(--_glass-bg);
+    -webkit-backdrop-filter: blur(var(--_glass-blur)) saturate(var(--ss-glass-saturate));
+    backdrop-filter: blur(var(--_glass-blur)) saturate(var(--ss-glass-saturate));
+  }
+
+  :where(.glass--interactive, button:not(.link, .tabs button), .button, a.stat, a.job):hover:not(:disabled) {
+    background: var(--_glass-bg-hover);
+  }
+}
+
+/* People who ask the OS for less transparency get the opaque fill everywhere. */
+@media (prefers-reduced-transparency: reduce) {
+  :where(
+    .glass, .glass--surface, .glass--subtle, .glass--control, .glass--strong, .glass--selected, .glass--raised,
+    .card, .stat, .stage-col, .table-wrap, .job, .topbar, .sidebar, .tabs, .modal,
+    button:not(.link, .tabs button), .button,
+    .tabs button.active, .tabs button[aria-selected="true"], .sidebar a.active
+  ) {
+    background: var(--_glass-fallback) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Hover lift for framed, clickable glass. */
+:where(.glass--interactive, button:not(.link, .tabs button), .button, a.stat, a.job):hover:not(:disabled) {
+  box-shadow: var(--ss-glass-highlight), var(--ss-shadow-sm);
+}
+:where(button.primary, .button.primary):hover:not(:disabled) {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), var(--ss-glass-strong-shadow);
+}

@@ -1,0 +1,27 @@
+/* Lists & locations page. Loaded by Lookups.jsx after the theme, so these page rules win;
+   values come from theme tokens. */
+
+/* Two columns on desktop (short lists first, long below), one column on smaller screens. */
+.lookups { display: grid; gap: var(--ss-layout-gap); grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+@media (max-width: 1100px) { .lookups { grid-template-columns: minmax(0, 1fr); } }
+
+/* Columns: Code (wraps only at underscores) | Label (fills the rest) | Active (narrow, centred). */
+.lookup-table table { table-layout: auto; min-width: 0; }
+.lookup-table th:first-child, .lookup-table td:first-child { width: 42%; white-space: normal; }
+.lookup-table th:last-child, .lookup-table td:last-child { width: 1%; text-align: center; white-space: nowrap; }
+.lookup-table .code { font-size: var(--ss-text-sm); letter-spacing: 0.02em; color: var(--ss-color-muted); }
+.lookup-table td input:not([type="checkbox"]) { width: 100%; }
+.lookup-table input[type="checkbox"] {
+  width: 18px; height: 18px; margin: 0; vertical-align: middle; cursor: pointer;
+  accent-color: var(--ss-color-graphite);
+}
+
+/* Add-a-value row: code, label and button on one line; stacked on phones. */
+.lookup-add.form { margin-top: var(--ss-space-4); grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto; }
+.lookup-add .form-actions { grid-column: auto; align-self: start; margin-top: calc(0.9rem * var(--ss-leading-normal) + 6px); }
+@media (max-width: 640px) {
+  .lookup-table th, .lookup-table td { padding-inline: 8px; }
+  .lookup-table th:first-child, .lookup-table td:first-child { width: 34%; }
+  .lookup-add.form { grid-template-columns: minmax(0, 1fr); }
+  .lookup-add .form-actions { margin-top: 0; }
+}

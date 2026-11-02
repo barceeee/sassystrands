@@ -1,0 +1,196 @@
+/*
+  Bridge: points the variables and hard-coded values in src/styles.css at theme tokens,
+  so every existing screen picks up the theme without its markup changing.
+  New code should read --ss-* tokens directly instead of these legacy names.
+*/
+
+:root,
+.theme-scope {
+  --bg: var(--ss-color-canvas);
+  --surface: var(--ss-glass-surface-fallback);
+  --border: var(--ss-color-line);
+  --text: var(--ss-color-ink);
+  --muted: var(--ss-color-muted);
+  --brand: var(--ss-color-graphite);
+  --brand-hover: var(--ss-color-charcoal);
+  --brand-soft: var(--ss-color-tint);
+  --red: var(--ss-color-danger);
+  --red-soft: var(--ss-color-danger-soft);
+  --amber: var(--ss-color-warning);
+  --amber-soft: var(--ss-color-warning-soft);
+  --blue: var(--ss-color-info);
+  --blue-soft: var(--ss-color-info-soft);
+  --purple: var(--ss-color-accent);
+  --purple-soft: var(--ss-color-accent-soft);
+  --grey-soft: var(--ss-color-tint);
+  --radius: var(--ss-radius-md);
+}
+
+:root {
+  font-family: var(--ss-font-body);
+  font-size: var(--ss-text-md);
+  line-height: var(--ss-leading-normal);
+  color: var(--ss-color-ink);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100%;
+  /* The canvas the glass sits on: a quiet pearl-to-stone wash, never darker than color.stone,
+     which is one of the backdrops the contrast tests check. */
+  background-color: var(--ss-color-canvas);
+  background-image:
+    radial-gradient(1200px 800px at 0% 0%, var(--ss-color-off-white) 0%, transparent 60%),
+    radial-gradient(1000px 720px at 100% 100%, var(--ss-color-stone) 0%, transparent 65%);
+  background-attachment: fixed;
+}
+body { background: transparent; }
+
+/* Typography */
+h1, h2, h3 {
+  font-family: var(--ss-font-display);
+  font-weight: var(--ss-weight-medium);
+  letter-spacing: var(--ss-tracking-display);
+  line-height: var(--ss-leading-tight);
+  color: var(--ss-color-ink);
+}
+h1 { font-size: var(--ss-text-xl); }
+h2 { font-size: var(--ss-text-lg); }
+.login-intro h1 { font-size: var(--ss-text-xxl); color: var(--ss-color-ink); }
+a { color: var(--ss-color-graphite); text-underline-offset: 3px; }
+
+/* Shapes */
+.card, .stat, .stage-col, .table-wrap { border-radius: var(--ss-radius-lg); }
+.card { padding: var(--ss-space-5); }
+button, .button {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--ss-space-2);
+  min-height: var(--ss-size-control);
+  border-radius: var(--ss-radius-md); color: var(--ss-color-ink); font-weight: var(--ss-weight-medium);
+}
+button.small, .button.small { min-height: var(--ss-size-control-sm); }
+button.link { min-height: 0; display: inline; }
+/* Buttons are inline-flex above; keep the mobile menu button hidden on wide screens. */
+.menu-btn { display: none; }
+@media (max-width: 860px) { .menu-btn { display: inline-flex; } }
+button.primary, .button.primary { color: var(--ss-color-on-strong); }
+button.danger { color: var(--ss-color-danger); }
+button.link { color: var(--ss-color-graphite); }
+
+/* Chrome */
+.topbar { border-bottom-color: var(--ss-glass-subtle-border); }
+.sidebar { border-right-color: var(--ss-glass-subtle-border); }
+/* Selection reads as a solid graphite silhouette (glass--selected); hover is a quiet wash. */
+.sidebar { gap: var(--ss-space-1); padding: var(--ss-space-4) var(--ss-space-3); }
+.sidebar a {
+  border: 1px solid transparent; border-radius: var(--ss-radius-md);
+  padding: 9px 14px; color: var(--ss-color-ink-soft); font-weight: var(--ss-weight-medium);
+}
+.sidebar a:hover:not(.active) { background: var(--ss-color-tint); color: var(--ss-color-ink); }
+.sidebar a.active { color: var(--ss-color-on-strong); border-color: var(--_glass-border); font-weight: var(--ss-weight-semibold); }
+
+/* Tabs: a glass track holding pill tabs; the active tab is the graphite silhouette. */
+.tabs {
+  width: fit-content; max-width: 100%;
+  gap: var(--ss-space-1); padding: var(--ss-space-1);
+  border-radius: var(--ss-radius-pill);
+  flex-wrap: nowrap;
+}
+.tabs button {
+  flex: none; min-height: 36px;
+  border: 1px solid transparent; border-radius: var(--ss-radius-pill);
+  padding: 7px 18px; color: var(--ss-color-ink-soft); font-weight: var(--ss-weight-medium);
+}
+.tabs button:hover:not(.active) { background: var(--ss-color-tint); color: var(--ss-color-ink); }
+.tabs button.active, .tabs button[aria-selected="true"] {
+  color: var(--ss-color-on-strong); border-color: var(--_glass-border); font-weight: var(--ss-weight-semibold);
+}
+/* On phones the track wraps instead of scrolling, so the selected tab is never off-screen. */
+@media (max-width: 860px) {
+  .tabs { flex-wrap: wrap; width: 100%; border-radius: var(--ss-radius-lg); }
+}
+.role { background: var(--ss-color-tint); color: var(--ss-color-ink-soft); }
+/* On phones the sidebar floats over content, so it uses the more opaque raised glass. */
+@media (max-width: 860px) {
+  .sidebar {
+    box-shadow: var(--ss-shadow-lg);
+    --_glass-bg: var(--ss-glass-raised-bg);
+    --_glass-blur: var(--ss-glass-raised-blur);
+    --_glass-fallback: var(--ss-glass-raised-fallback);
+  }
+}
+
+/* Fields stay near-opaque: typed text is the content, so it gets the highest contrast. */
+input, select, textarea {
+  background: var(--ss-color-field);
+  border-color: var(--ss-color-line-strong);
+  color: var(--ss-color-ink);
+  transition: border-color var(--ss-motion-fast) var(--ss-motion-ease), box-shadow var(--ss-motion-fast) var(--ss-motion-ease);
+}
+input:not([type="checkbox"], [type="radio"], [type="file"]), select { height: var(--ss-size-control); }
+::placeholder { color: var(--ss-color-muted); opacity: 1; }
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--ss-color-focus);
+  box-shadow: 0 0 0 3px var(--ss-color-focus-ring);
+}
+button:focus-visible, .button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--ss-color-focus);
+  outline-offset: 2px;
+}
+
+/* Forms: fields line up from the top, so a hint under one field no longer pushes the
+   inputs beside it up. Buttons placed inside a field row line up with the inputs. */
+.form { align-items: start; }
+.form > :is(button, .button) { align-self: end; }
+/* Order and bundle line rows (a .form inside a .form) have no hints; there the value
+   controls line up at the bottom with the product select and the Remove button. */
+.form .form { align-items: end; }
+/* Those rows set fixed columns inline; on phones stack them so the page never scrolls sideways. */
+@media (max-width: 640px) {
+  .form .form { grid-template-columns: 1fr !important; }
+  .form .form > :is(button, .button) { justify-self: start; }
+}
+.field { gap: 6px; }
+.field > span { font-weight: var(--ss-weight-medium); color: var(--ss-color-ink); }
+.field > small { line-height: 1.35; }
+
+/* Tables on glass */
+th, tfoot td { background: var(--ss-glass-raised-bg); color: var(--ss-color-muted); }
+tfoot td { color: var(--ss-color-ink); }
+th { letter-spacing: 0.02em; }
+tbody tr:hover { background: var(--ss-color-tint); }
+td { vertical-align: middle; }
+
+/* Status keeps its meaning in muted, earthy tones */
+.badge-green, .alert-success { background: var(--ss-color-success-soft); color: var(--ss-color-success); }
+.alert { border-color: color-mix(in srgb, currentColor 22%, transparent); }
+a.stat:hover, .job:hover { border-color: var(--_glass-border); }
+
+/* KPI tiles: quiet label on top, figure pinned to the bottom. Tiles in a row share one height,
+   so every figure sits on the same line however many lines its label wraps to. */
+.stat {
+  display: flex; flex-direction: column; justify-content: space-between; gap: var(--ss-space-3);
+  min-height: 112px;
+  padding: var(--ss-space-4) var(--ss-space-5);
+  container-type: inline-size; /* figures size themselves to the tile width */
+  font-size: var(--ss-text-sm); font-weight: var(--ss-weight-medium); line-height: 1.35;
+  color: var(--ss-color-muted);
+}
+.stat b {
+  display: block; margin-top: auto;
+  font-family: var(--ss-font-body);
+  /* Tiles in a grid share a width, so every figure in a row gets the same size, and a
+     13-character amount such as ₱1,248,350.00 still fits on one line. */
+  font-size: clamp(1.25rem, 13cqi, 1.75rem); font-weight: var(--ss-weight-semibold);
+  white-space: nowrap;
+  line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums lining-nums;
+  color: var(--ss-color-ink);
+}
+/* Phones: one tile per row as a compact line, label left and figure right, so every
+   figure lines up on the same right edge. */
+@media (max-width: 480px) {
+  .stat { flex-direction: row; align-items: center; min-height: 64px; gap: var(--ss-space-4); }
+  .stat b { margin-top: 0; margin-left: auto; font-size: 1.5rem; text-align: right; }
+}
+.stat.warn b { color: var(--ss-color-warning); }
+.stat.bad b { color: var(--ss-color-danger); }
+
+.dropzone { background: var(--ss-glass-subtle-bg); border-color: var(--ss-color-line-strong); border-radius: var(--ss-radius-lg); }
+.timeline li { border-bottom-color: var(--ss-color-line); }

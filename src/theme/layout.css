@@ -1,0 +1,78 @@
+/*
+  Responsive layout for every screen, from small phones to ultra-wide monitors.
+  Sizes come from the theme's --ss-layout-* tokens; content always fills the available width.
+
+    < 640px    phone: one column, stacked forms, full-width tabs
+    < 860px    tablet / small laptop: sidebar becomes a slide-out menu
+    pointer: coarse    touch screens get 44px tap targets
+*/
+
+/* App shell */
+.shell {
+  grid-template-columns: var(--ss-layout-sidebar) minmax(0, 1fr);
+  grid-template-rows: var(--ss-layout-topbar) 1fr;
+  min-height: 100vh;
+  min-height: 100dvh; /* excludes the mobile browser's address bar */
+}
+.topbar { padding-inline: var(--ss-layout-gutter); }
+.content { padding: var(--ss-layout-gutter); }
+
+/* The sidebar stays in view while long pages scroll. */
+@media (min-width: 861px) {
+  .sidebar {
+    position: sticky;
+    top: var(--ss-layout-topbar);
+    align-self: start;
+    height: calc(100dvh - var(--ss-layout-topbar));
+    overflow-y: auto;
+  }
+}
+
+/* Pages use the full width of the screen (no fixed cap). */
+.page { max-width: none; width: 100%; gap: var(--ss-layout-gap); }
+
+/* Card grids add columns as the screen grows and never overflow a narrow phone. */
+.grid { gap: var(--ss-layout-gap); grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.stats { gap: var(--ss-layout-gap); grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+.stage-board { gap: var(--ss-layout-gap); grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
+.form { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+.filters input[type="search"] { min-width: min(260px, 100%); flex: 1 1 260px; max-width: 480px; }
+
+/* Data tables: on smaller screens rows stay on one line and the table scrolls inside its card
+   instead of squeezing values like SO-00012 onto two lines. */
+th { white-space: nowrap; }
+@media (max-width: 1100px) {
+  .table-wrap > table { min-width: max-content; }
+}
+
+/* Single-purpose screens */
+.login { min-height: 100dvh; max-width: 1180px; padding: var(--ss-layout-gutter); }
+.center-screen { min-height: 100dvh; }
+.modal { max-height: calc(100dvh - 2 * var(--ss-space-6)); }
+
+/* Tablet and below: slide-out sidebar */
+@media (max-width: 860px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .sidebar { top: var(--ss-layout-topbar); width: min(300px, 85vw); overflow-y: auto; }
+  /* 16px stops iOS Safari from zooming the page when a field gets focus. */
+  input, select, textarea { font-size: 16px; }
+}
+
+/* Phone */
+@media (max-width: 640px) {
+  .page-head { flex-direction: column; align-items: stretch; }
+  .page-head .actions > :is(button, .button) { flex: 1 1 auto; }
+  .card-head { align-items: flex-start; }
+  .stats { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+  .filters > * { flex: 1 1 100%; max-width: none; }
+  .dl { grid-template-columns: 1fr; gap: 2px; }
+  .dl dd { margin-bottom: var(--ss-space-2); }
+}
+
+/* Touch screens: bigger tap targets */
+@media (pointer: coarse) {
+  button:not(.link, .tabs button, .small), .button:not(.small) { min-height: var(--ss-size-control-touch); }
+  input:not([type="checkbox"], [type="radio"], [type="file"]), select { height: var(--ss-size-control-touch); }
+  .tabs button { min-height: 40px; }
+  .sidebar a { padding-block: 12px; }
+}

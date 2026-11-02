@@ -1,0 +1,14 @@
+/*
+  Theme entry stylesheet. Import this once (main.jsx) instead of ../styles.css.
+
+  Cascade layers keep the order explicit: the original app styles load first in `legacy`,
+  and everything in `theme` wins over them regardless of selector specificity. Token values
+  are not defined here; ThemeProvider writes them from Theme.js as --ss-* custom properties.
+*/
+@layer legacy, theme;
+
+@import '../styles.css' layer(legacy);
+@import './glass.css' layer(theme);
+@import './bridge.css' layer(theme);
+@import './layout.css' layer(theme);
+@import './components.css' layer(theme);
