@@ -37,6 +37,9 @@ Requires Node 20+ (tested on Node 24).
    npm run create-owner -- owner "Owner Full Name"
    ```
    The password is asked at a hidden prompt. Remove the service key from `.env.local` afterwards.
+   To try every role, `npm run test-users` creates `test.owner`, `test.admin`, `test.inventory`,
+   `test.production` and `test.qa` with random passwords saved to `test-accounts.local.txt` (git-ignored).
+   `npm run test-users -- --remove` deletes them again; do that before going live.
 6. `npm run dev` → http://localhost:5173 → sign in with the username. Add other staff under **Users**.
 7. Import the client files under **Spreadsheet import** in this order: inventory tracker, then available stocks,
    then client orders.
