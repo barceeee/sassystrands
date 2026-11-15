@@ -1,0 +1,33 @@
+.station-shell { min-height: 100vh; }
+.station-bar {
+  display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--surface);
+  border-bottom: 1px solid var(--border); font-size: 0.95rem;
+}
+.station-bar .who { margin-left: auto; }
+.station-main { padding: 16px; }
+
+.scanner { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.scanner-station { font-size: clamp(1.8rem, 6vw, 2.6rem); margin: 4px 0 0; color: var(--brand); }
+.scanner-hint { margin: 0; font-size: 1.15rem; }
+.scan-capture { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; border: 0; padding: 0; }
+button.big { font-size: 1.3rem; padding: 16px 24px; border-radius: 12px; min-height: 56px; }
+.scanner-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.camera-view { width: 100%; max-height: 50vh; background: #000; border-radius: 12px; object-fit: cover; }
+
+.scan-result { padding: 18px 20px; border-radius: 14px; }
+.scan-result.ok { background: var(--brand-soft); color: var(--brand); border: 2px solid var(--brand); }
+.scan-result.err { background: var(--red-soft); color: var(--red); border: 2px solid var(--red); }
+.scan-result-main { font-size: clamp(1.4rem, 5vw, 2rem); font-weight: 700; }
+.scan-result-detail { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; font-size: 1.1rem; }
+
+.qa-panel { display: flex; flex-direction: column; gap: 12px; }
+.qa-buttons { display: flex; gap: 12px; }
+.qa-buttons button { flex: 1; }
+.qa-defects { display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.scanner-manual { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.scanner-manual .field { flex: 1; min-width: 200px; }
+
+.scan-recent h2 { font-size: 1.05rem; margin: 8px 0; }
+.scan-recent ul { list-style: none; padding: 0; margin: 0; }
+.scan-recent li { display: flex; gap: 10px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.scan-recent li.err span:not(.muted) { color: var(--red); }

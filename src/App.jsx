@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './auth.jsx'
 import Layout from './components/Layout.jsx'
 import { Forbidden, Loading } from './components/ui.jsx'
@@ -17,7 +18,9 @@ import Production from './pages/Production.jsx'
 import ProductionNew from './pages/ProductionNew.jsx'
 import ProductionDetail from './pages/ProductionDetail.jsx'
 import ProductionLabels from './pages/ProductionLabels.jsx'
-import Scan from './pages/Scan.jsx'
+import Scanner from './pages/station/Scanner.jsx'
+import Overview from './pages/station/Overview.jsx'
+import { homeFor, allowedPath } from './lib/home.js'
 import QA from './pages/QA.jsx'
 import OrNumbers from './pages/OrNumbers.jsx'
 import Reports from './pages/Reports.jsx'
@@ -33,7 +36,19 @@ function Guard({ perm, children }) {
 }
 
 export default function App() {
-  const { loading, session, profile, signOut } = useAuth()
+  const { loading, session, profile, role, signOut } = useAuth()
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
+  // Set while the sign-in screen is showing, so the first render after a fresh sign-in goes to the
+  // role's home once (a page reload keeps the current URL).
+  const justSignedIn = useRef(false)
+  useEffect(() => {
+    if (session === null) justSignedIn.current = true
+    else if (role && justSignedIn.current) {
+      justSignedIn.current = false
+      navigate(homeFor(role), { replace: true })
+    }
+  }, [session, role, navigate])
   if (loading) return <div className="center-screen"><Loading /></div>
   if (!session) return <Login />
   if (!profile?.active) {
@@ -47,6 +62,7 @@ export default function App() {
       </div>
     )
   }
+  if (!allowedPath(role, pathname)) return <Navigate to={homeFor(role)} replace />
   return (
     <Routes>
       <Route element={<Layout />}>
@@ -64,7 +80,8 @@ export default function App() {
         <Route path="production/new" element={<Guard perm="production.manage"><ProductionNew /></Guard>} />
         <Route path="production/:id" element={<ProductionDetail />} />
         <Route path="production/:id/labels" element={<Guard perm="production.manage"><ProductionLabels /></Guard>} />
-        <Route path="scan" element={<Scan />} />
+        <Route path="station" element={<Scanner />} />
+        <Route path="station/overview" element={<Overview />} />
         <Route path="qa" element={<Guard perm="qa.view"><QA /></Guard>} />
         <Route path="or-numbers" element={<Guard perm="or.manage"><OrNumbers /></Guard>} />
         <Route path="reports" element={<Guard perm="reports.view"><Reports /></Guard>} />
