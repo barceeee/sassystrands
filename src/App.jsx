@@ -1,34 +1,35 @@
-import { useEffect, useRef } from 'react'
+import { lazy, useEffect, useRef } from 'react'
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './auth.jsx'
 import Layout from './components/Layout.jsx'
 import { Loading } from './components/ui.jsx'
 import Login from './pages/Login.jsx'
-import Dashboard from './pages/Dashboard.jsx'
-import Stock from './pages/Stock.jsx'
-import ItemDetail from './pages/ItemDetail.jsx'
-import ItemForm from './pages/ItemForm.jsx'
-import Movements from './pages/Movements.jsx'
-import Counts from './pages/Counts.jsx'
-import Bundles from './pages/Bundles.jsx'
-import Orders from './pages/Orders.jsx'
-import OrderForm from './pages/OrderForm.jsx'
-import OrderDetail from './pages/OrderDetail.jsx'
-import Production from './pages/Production.jsx'
-import Piece from './pages/Piece.jsx'
-import Receiving from './pages/Receiving.jsx'
-import Labels from './pages/Labels.jsx'
-import Scanner from './pages/station/Scanner.jsx'
-import Overview from './pages/station/Overview.jsx'
+// Pages load on first visit so the first download stays small (Layout shows a loader meanwhile).
+const Dashboard = lazy(() => import('./pages/Dashboard.jsx'))
+const Stock = lazy(() => import('./pages/Stock.jsx'))
+const ItemDetail = lazy(() => import('./pages/ItemDetail.jsx'))
+const ItemForm = lazy(() => import('./pages/ItemForm.jsx'))
+const Movements = lazy(() => import('./pages/Movements.jsx'))
+const Counts = lazy(() => import('./pages/Counts.jsx'))
+const Bundles = lazy(() => import('./pages/Bundles.jsx'))
+const Orders = lazy(() => import('./pages/Orders.jsx'))
+const OrderForm = lazy(() => import('./pages/OrderForm.jsx'))
+const OrderDetail = lazy(() => import('./pages/OrderDetail.jsx'))
+const Production = lazy(() => import('./pages/Production.jsx'))
+const Piece = lazy(() => import('./pages/Piece.jsx'))
+const Receiving = lazy(() => import('./pages/Receiving.jsx'))
+const Labels = lazy(() => import('./pages/Labels.jsx'))
+const Scanner = lazy(() => import('./pages/station/Scanner.jsx'))
+const Overview = lazy(() => import('./pages/station/Overview.jsx'))
 import { homeFor, allowedPath } from './lib/home.js'
-import QA from './pages/QA.jsx'
-import OrNumbers from './pages/OrNumbers.jsx'
-import Reports from './pages/Reports.jsx'
-import Imports from './pages/Imports.jsx'
-import ImportDetail from './pages/ImportDetail.jsx'
-import Lookups from './pages/Lookups.jsx'
-import Users from './pages/Users.jsx'
-import Account from './pages/Account.jsx'
+const QA = lazy(() => import('./pages/QA.jsx'))
+const OrNumbers = lazy(() => import('./pages/OrNumbers.jsx'))
+const Reports = lazy(() => import('./pages/Reports.jsx'))
+const Imports = lazy(() => import('./pages/Imports.jsx'))
+const ImportDetail = lazy(() => import('./pages/ImportDetail.jsx'))
+const Lookups = lazy(() => import('./pages/Lookups.jsx'))
+const Users = lazy(() => import('./pages/Users.jsx'))
+const Account = lazy(() => import('./pages/Account.jsx'))
 
 function Guard({ perm, or, children }) {
   const { can, role } = useAuth()
