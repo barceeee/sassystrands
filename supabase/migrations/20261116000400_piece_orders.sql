@@ -46,11 +46,10 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------- ship / stock
+-- Shipping posts no stock movement: production pieces never entered the stock ledger.
 create function public.ship_pieces(p_serials text[])
 returns int language plpgsql security definer set search_path = public, pg_temp as $$
-declare
-  v_serial text; v_piece public.pieces; v_n int := 0; g record;
-  v_lines bigint[] := '{}'; v_counts int[] := '{}'; v_idx int;
+declare v_serial text; v_piece public.pieces; v_n int := 0;
 begin
   perform public.require_perm('receiving.manage');
   if p_serials is null or cardinality(p_serials) = 0 then raise exception 'Scan at least one piece.'; end if;
@@ -62,19 +61,7 @@ begin
     update public.pieces set stage = 'SHIPPED', stage_since = now() where id = v_piece.id;
     insert into public.piece_events (piece_id, event, from_stage, to_stage)
     values (v_piece.id, 'SHIP', 'READY', 'SHIPPED');
-    v_idx := array_position(v_lines, v_piece.order_line_id);
-    if v_idx is null then
-      v_lines := v_lines || v_piece.order_line_id; v_counts := v_counts || 1;
-    else
-      v_counts[v_idx] := v_counts[v_idx] + 1;
-    end if;
     v_n := v_n + 1;
-  end loop;
-  for g in select unnest(v_lines) as line_id, unnest(v_counts) as qty loop
-    insert into public.stock_movements (item_id, location, movement_type, qty, movement_date, reference, note)
-    select l.item_id, 'HQ', 'OUT', g.qty, current_date, o.order_no,
-           'Shipped from production, order line ' || l.id
-      from public.order_lines l join public.orders o on o.id = l.order_id where l.id = g.line_id;
   end loop;
   return v_n;
 end $$;

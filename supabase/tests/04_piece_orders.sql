@@ -86,9 +86,10 @@ begin
   if (select count(*) from public.pieces where id in (select id from t4_p where n in (1, 2)) and stage = 'SHIPPED') <> 2 then
     raise exception 'ship: pieces not SHIPPED';
   end if;
-  if (select count(*) from public.stock_movements where movement_type = 'OUT' and reference = 'T4-1') <> 1
-     or (select qty from public.stock_movements where movement_type = 'OUT' and reference = 'T4-1') <> 2 then
-    raise exception 'ship: expected one OUT movement of qty 2';
+  if exists (select 1 from public.stock_movements) then raise exception 'ship: must not post any stock movement'; end if;
+  if (select shipped from public.v_order_lines where id = pg_temp.line(1)) <> 2
+     or (select line_status from public.v_order_lines where id = pg_temp.line(1)) <> 'FULFILLED' then
+    raise exception 'ship: v_order_lines does not reflect shipped pieces';
   end if;
   if (select count(*) from public.piece_events where event = 'SHIP') <> 2 then raise exception 'ship: SHIP events'; end if;
   perform pg_temp.expect_err(format('select public.unlink_piece(%L)', pg_temp.s(1)), 'already shipped');
