@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../supabase.js'
 import { useAuth } from '../auth.jsx'
 import { useLoad, useLookups, useStaff, loadItems, fetchAll } from '../lib/data.js'
-import { Page, Card, Alert, Loading, Table, Badge } from '../components/ui.jsx'
+import { Page, Card, Alert, Table, Badge } from '../components/ui.jsx'
+import { CardSkeleton } from '../components/Skeleton.jsx'
 import MovementForm from '../components/MovementForm.jsx'
 import { date, dateTime, qty, downloadCsv } from '../lib/format.js'
 
@@ -56,7 +57,7 @@ export default function Movements() {
         </div>
         <p className="muted small">In: {qty(sum('IN'))} · Out: {qty(sum('OUT'))} · Opening: {qty(sum('OPENING'))} · Adjustments (net): {qty(rows.filter((m) => m.movement_type === 'ADJUST').reduce((a, m) => a + m.qty, 0))}</p>
         <Alert>{moves.error}</Alert>
-        {moves.loading ? <Loading /> : (
+        {moves.loading ? <CardSkeleton cols={7} /> : (
           <Table
             columns={[
               { key: 'movement_date', label: 'Date', render: (m) => date(m.movement_date) },

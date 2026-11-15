@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { supabase, must } from '../supabase.js'
 import { useAuth } from '../auth.jsx'
 import { useLoad, loadItems } from '../lib/data.js'
-import { Page, Card, Alert, Loading, Table, Badge, Field, ItemPicker, ActionResult, useAction } from '../components/ui.jsx'
+import { Page, Card, Alert, Table, Badge, Field, ItemPicker, ActionResult, useAction } from '../components/ui.jsx'
+import { CardSkeleton } from '../components/Skeleton.jsx'
 import { money, date, today } from '../lib/format.js'
 
 // Pre-packed "for sale" bundles (SSKB codes). Kept separate from stock balances: see README assumptions.
@@ -34,7 +35,7 @@ export default function Bundles() {
         </div>
         <ActionResult action={action} />
         <Alert>{bundles.error}</Alert>
-        {bundles.loading ? <Loading /> : (
+        {bundles.loading ? <CardSkeleton cols={5} /> : (
           <Table
             columns={[
               { key: 'code', label: 'Code' },

@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { supabase, must, rpc } from '../supabase.js'
 import { useAuth } from '../auth.jsx'
 import { useLoad, useLookups, loadItems, fetchAll } from '../lib/data.js'
-import { Page, Card, Alert, Loading, Table, Field, ItemPicker, ActionResult, useAction, Badge } from '../components/ui.jsx'
+import { Page, Card, Alert, Table, Field, ItemPicker, ActionResult, useAction, Badge } from '../components/ui.jsx'
+import { CardSkeleton } from '../components/Skeleton.jsx'
 import { date, today, money } from '../lib/format.js'
 
 const SOURCES = {
@@ -52,7 +53,7 @@ export default function Counts() {
         </div>
         <ActionResult action={apply} />
         <Alert>{counts.error}</Alert>
-        {counts.loading ? <Loading /> : (
+        {counts.loading ? <CardSkeleton cols={6} /> : (
           <Table
             columns={[
               { key: 'count_date', label: 'Date', render: (c) => date(c.count_date) },

@@ -3,7 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../supabase.js'
 import { useAuth } from '../auth.jsx'
 import { useLoad, fetchAll, useLookups, loadItems } from '../lib/data.js'
-import { Page, Card, Alert, Loading, Table } from '../components/ui.jsx'
+import { Page, Card, Alert, Table } from '../components/ui.jsx'
+import { CardSkeleton } from '../components/Skeleton.jsx'
 import MovementForm from '../components/MovementForm.jsx'
 import { money, qty, date, downloadCsv } from '../lib/format.js'
 
@@ -79,7 +80,7 @@ export default function Stock() {
         </div>
         <Alert>{stock.error}</Alert>
         {unpriced > 0 && <Alert kind="warning">{unpriced} product(s) shown have stock but no price; their value counts as ₱0.</Alert>}
-        {stock.loading ? <Loading /> : (
+        {stock.loading ? <CardSkeleton cols={7} /> : (
           <Table
             rowKey="item_id"
             onRowClick={(r) => navigate(`/inventory/items/${r.item_id}`)}

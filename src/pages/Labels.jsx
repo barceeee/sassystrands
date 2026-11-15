@@ -4,7 +4,8 @@ import { supabase, must } from '../supabase.js'
 import { useAuth } from '../auth.jsx'
 import { useLoad, fetchAll } from '../lib/data.js'
 import { date } from '../lib/format.js'
-import { Page, Alert, Loading } from '../components/ui.jsx'
+import { Page, Alert } from '../components/ui.jsx'
+import { PAGE_SKELETONS } from '../components/pageSkeletons.jsx'
 import Barcode from '../components/Barcode.jsx'
 import './Labels.css'
 
@@ -40,7 +41,7 @@ export default function Labels() {
     return () => document.body.classList.remove('printing-labels')
   }, [])
 
-  if (pieces.loading) return <Loading />
+  if (pieces.loading) return PAGE_SKELETONS.labels
   if (pieces.error) return <Alert>{pieces.error}</Alert>
   if (nothing) return <Page title="Labels"><Alert>Nothing to print. Open this page from a receipt, an import or a piece.</Alert></Page>
 

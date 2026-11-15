@@ -4,7 +4,8 @@ import { supabase, rpc } from '../../supabase.js'
 import { useAuth } from '../../auth.jsx'
 import { useLoad, fetchAll, useLookups, useStaff } from '../../lib/data.js'
 import { dateTime, titleCase } from '../../lib/format.js'
-import { Page, Card, Table, Badge, Alert, Loading, useAction, ActionResult } from '../../components/ui.jsx'
+import { Page, Card, Table, Badge, Alert, useAction, ActionResult } from '../../components/ui.jsx'
+import { CardSkeleton } from '../../components/Skeleton.jsx'
 import FixPieceModal from '../../components/FixPieceModal.jsx'
 
 const RECENT_SCANS = 15
@@ -135,17 +136,17 @@ export default function Overview() {
       </div>
 
       <Card title="Pieces at this station">
-        {board.loading && !board.data ? <Loading /> : <Table columns={pieceColumns} rows={board.data} empty="No pieces at this station." />}
+        {board.loading && !board.data ? <CardSkeleton cols={5} /> : <Table columns={pieceColumns} rows={board.data} empty="No pieces at this station." />}
       </Card>
 
       {isQaStation && (
         <Card title="Passed or rejected (not shipped yet)">
-          {outcomes.loading && !outcomes.data ? <Loading /> : <Table columns={outcomeColumns} rows={outcomes.data} empty="No passed or rejected pieces waiting." />}
+          {outcomes.loading && !outcomes.data ? <CardSkeleton cols={5} /> : <Table columns={outcomeColumns} rows={outcomes.data} empty="No passed or rejected pieces waiting." />}
         </Card>
       )}
 
       <Card title="Recent scans">
-        {scans.loading && !scans.data ? <Loading /> : <Table columns={scanColumns} rows={scans.data?.slice(0, RECENT_SCANS)} empty="No scans at this station this week." />}
+        {scans.loading && !scans.data ? <CardSkeleton cols={5} /> : <Table columns={scanColumns} rows={scans.data?.slice(0, RECENT_SCANS)} empty="No scans at this station this week." />}
       </Card>
 
       <FixPieceModal piece={fix} stageLabel={stageLabel} onClose={() => setFix(null)} onDone={fixed} />

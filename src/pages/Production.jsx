@@ -3,7 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase, must, rpc } from '../supabase.js'
 import { useAuth } from '../auth.jsx'
 import { useLoad, useLookups, loadItems, fetchAll } from '../lib/data.js'
-import { Page, Card, Alert, Loading, Table, Badge, Field, ItemPicker, ActionResult, useAction } from '../components/ui.jsx'
+import { Page, Card, Alert, Table, Badge, Field, ItemPicker, ActionResult, useAction } from '../components/ui.jsx'
+import { CardSkeleton } from '../components/Skeleton.jsx'
 import { qty, dateTime, pieceFor, PRODUCT_NOT_SET } from '../lib/format.js'
 
 // Read-only progress board. Pieces only move when a station scans them.
@@ -61,7 +62,7 @@ export default function Production() {
       </div>
       <Alert>{board.error || totals.error || readyForStock.error}</Alert>
       {receiving && <ReceiveToStock pieces={readyForStock.data ?? []} locations={lookups.data?.locations ?? []} onDone={reloadAll} />}
-      {board.loading ? <Loading /> : (
+      {board.loading ? <CardSkeleton cols={6} /> : (
         <Card title={`Pieces (${rows.length})`}>
           <Table
             onRowClick={(r) => navigate(`/pieces/${r.serial}`)}

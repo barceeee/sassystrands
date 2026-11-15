@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase, must, rpc } from '../supabase.js'
 import { useLoad, useStaff, fetchAll } from '../lib/data.js'
-import { Page, Card, Alert, Loading, Table, Badge, Field, ActionResult, useAction } from '../components/ui.jsx'
+import { Page, Card, Alert, Table, Badge, Field, ActionResult, useAction } from '../components/ui.jsx'
+import { CardSkeleton } from '../components/Skeleton.jsx'
 import { date, money, today, dateTime } from '../lib/format.js'
 
 // Official receipt (OR) numbers: register booklet ranges, issue them in sequence against client
@@ -45,7 +46,7 @@ export default function OrNumbers() {
         </div>
         <ActionResult action={action} />
         <Alert>{ors.error}</Alert>
-        {ors.loading ? <Loading /> : (
+        {ors.loading ? <CardSkeleton cols={6} /> : (
           <Table
             columns={[
               { key: 'or_no', label: 'OR no.' },

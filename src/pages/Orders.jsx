@@ -3,7 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../supabase.js'
 import { useAuth } from '../auth.jsx'
 import { useLoad, fetchAll } from '../lib/data.js'
-import { Page, Card, Alert, Loading, Table, Badge } from '../components/ui.jsx'
+import { Page, Card, Alert, Table, Badge } from '../components/ui.jsx'
+import { CardSkeleton } from '../components/Skeleton.jsx'
 import { date, money } from '../lib/format.js'
 
 const STATUSES = ['NOT_STARTED', 'IN_PRODUCTION', 'READY_TO_SHIP', 'PARTIALLY_SHIPPED', 'FULFILLED', 'CANCELED']
@@ -32,7 +33,7 @@ export default function Orders() {
           <input type="search" placeholder="Order no. or client" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         <Alert>{orders.error}</Alert>
-        {orders.loading ? <Loading /> : (
+        {orders.loading ? <CardSkeleton cols={6} /> : (
           <Table
             onRowClick={(o) => navigate(`/orders/${o.id}`)}
             columns={[

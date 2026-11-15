@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { supabase, must } from '../supabase.js'
 import { useLoad, useStaff, fetchAll } from '../lib/data.js'
-import { Page, Card, Alert, Loading, Table, Badge } from '../components/ui.jsx'
+import { Page, Card, Alert, Table, Badge } from '../components/ui.jsx'
+import { CardSkeleton } from '../components/Skeleton.jsx'
 import { dateTime, pieceFor, PRODUCT_NOT_SET } from '../lib/format.js'
 
 // Read-only: inspections are recorded by the QA station's scanner, not here.
@@ -28,7 +29,7 @@ export default function QA() {
     <Page title="QA inspection" subtitle="Pieces are passed or rejected by scanning at the QA station. This page only shows progress.">
       <Alert>{board.error || recent.error}</Alert>
       <Card title={`At the QA station (${queue.length})`}>
-        {board.loading ? <Loading /> : (
+        {board.loading ? <CardSkeleton cols={5} /> : (
           <Table columns={[...forColumns, { key: 'stage_since', label: 'Arrived', render: (r) => dateTime(r.stage_since) }]} rows={queue} empty="Nothing waiting for QA." />
         )}
       </Card>
@@ -36,7 +37,7 @@ export default function QA() {
         <Table columns={[...forColumns, { key: 'stage_since', label: 'Rejected', render: (r) => dateTime(r.stage_since) }]} rows={rework} empty="No rejected pieces." />
       </Card>
       <Card title="Recent inspections">
-        {recent.loading ? <Loading /> : (
+        {recent.loading ? <CardSkeleton cols={5} /> : (
           <Table
             columns={[
               { key: 'inspected_at', label: 'When', render: (x) => dateTime(x.inspected_at) },

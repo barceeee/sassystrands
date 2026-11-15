@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth.jsx'
+import { Loading } from './ui.jsx'
 import { ROLE_LABELS } from '../lib/perms.js'
 import { allowedPath } from '../lib/home.js'
 import '../pages/station/Station.css'
@@ -40,7 +41,7 @@ export default function Layout() {
             <button className="link" onClick={signOut}>Sign out</button>
           </div>
         </header>
-        <main className="station-main"><Outlet /></main>
+        <main className="station-main"><Suspense fallback={<Loading />}><Outlet /></Suspense></main>
       </div>
     )
   }
@@ -61,7 +62,7 @@ export default function Layout() {
         ))}
       </nav>
       <main className="content">
-        <Outlet />
+        <Suspense fallback={<Loading />}><Outlet /></Suspense>
       </main>
     </div>
   )

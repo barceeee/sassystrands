@@ -3,7 +3,9 @@ import { useParams, Link } from 'react-router-dom'
 import { supabase, must } from '../supabase.js'
 import { useAuth } from '../auth.jsx'
 import { useLoad, useLookups, useStaff, fetchAll } from '../lib/data.js'
-import { Page, Card, Alert, Loading, Table, Badge, Field, ActionResult, useAction } from '../components/ui.jsx'
+import { Page, Card, Alert, Table, Badge, Field, ActionResult, useAction } from '../components/ui.jsx'
+import { CardSkeleton } from '../components/Skeleton.jsx'
+import { PAGE_SKELETONS } from '../components/pageSkeletons.jsx'
 import MovementForm from '../components/MovementForm.jsx'
 import { money, qty, date, dateTime } from '../lib/format.js'
 
@@ -22,7 +24,7 @@ export default function ItemDetail() {
   let running = 0
   const history = (moves.data ?? []).map((m) => ({ ...m, balance: (running += m.signed_qty) })).reverse()
 
-  if (item.loading) return <Loading />
+  if (item.loading) return PAGE_SKELETONS.itemDetail
   if (item.error) return <Alert>{item.error}</Alert>
   const it = item.data
   return (
@@ -40,7 +42,7 @@ export default function ItemDetail() {
         </Card>
       )}
       <Card title="Movement history">
-        {moves.loading ? <Loading /> : (
+        {moves.loading ? <CardSkeleton cols={6} /> : (
           <Table
             columns={[
               { key: 'movement_date', label: 'Date', render: (m) => date(m.movement_date) },

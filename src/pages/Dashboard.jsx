@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom'
 import { supabase, must } from '../supabase.js'
 import { useAuth } from '../auth.jsx'
 import { useLoad, fetchAll } from '../lib/data.js'
-import { Page, Card, Alert, Loading, Table, Badge } from '../components/ui.jsx'
+import { Page, Card, Alert, Table, Badge } from '../components/ui.jsx'
+import { CardSkeleton } from '../components/Skeleton.jsx'
 import { money, qty } from '../lib/format.js'
 
 export default function Dashboard() {
@@ -52,7 +53,7 @@ export default function Dashboard() {
           <Link className="stat" to="/orders?status=READY_TO_SHIP">Orders ready to ship<b>{ready.length}</b></Link>
           <Link className={`stat ${s.openFlags ? 'warn' : ''}`} to="/imports">Import issues to review<b>{s.openFlags}</b></Link>
         </div>
-      ) : <Loading />)}
+      ) : <CardSkeleton type="stats" count={5} />)}
 
       <div className="stats">
         <Link className={`stat ${forQa ? 'warn' : ''}`} to="/production?stage=FOR_QA">Pieces awaiting QA<b>{qty(forQa)}</b></Link>
@@ -61,7 +62,7 @@ export default function Dashboard() {
 
       <div className="grid">
         <Card title="Work in production" actions={<Link to="/production">Open board</Link>}>
-          {board.loading ? <Loading /> : (
+          {board.loading ? <CardSkeleton cols={4} /> : (
             <Table
               rowKey="stage"
               columns={[

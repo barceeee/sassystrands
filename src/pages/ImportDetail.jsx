@@ -1,7 +1,9 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase, must, rpc } from '../supabase.js'
 import { useLoad, useStaff, fetchAll } from '../lib/data.js'
-import { Page, Card, Alert, Loading, ActionResult, useAction } from '../components/ui.jsx'
+import { Page, Card, Alert, ActionResult, useAction } from '../components/ui.jsx'
+import { CardSkeleton } from '../components/Skeleton.jsx'
+import { PAGE_SKELETONS } from '../components/pageSkeletons.jsx'
 import FlagTable from '../components/FlagTable.jsx'
 import { dateTime, qty } from '../lib/format.js'
 
@@ -24,7 +26,7 @@ export default function ImportDetail() {
     if (ok) navigate('/imports')
   }
 
-  if (batch.loading) return <Loading />
+  if (batch.loading) return PAGE_SKELETONS.importDetail
   if (batch.error) return <Alert>{batch.error}</Alert>
   const b = batch.data
   const open = (flags.data ?? []).filter((x) => !x.resolved && x.severity !== 'INFO').length
@@ -41,7 +43,7 @@ export default function ImportDetail() {
       </div>
       <ActionResult action={action} />
       <Card title="Flagged rows">
-        {flags.loading ? <Loading /> : <FlagTable flags={flags.data ?? []} onResolve={resolve} busy={action.busy} />}
+        {flags.loading ? <CardSkeleton cols={5} /> : <FlagTable flags={flags.data ?? []} onResolve={resolve} busy={action.busy} />}
       </Card>
     </Page>
   )
