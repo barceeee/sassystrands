@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { rpc } from '../../supabase.js'
+import { supabase, rpc } from '../../supabase.js'
 import { useAuth } from '../../auth.jsx'
-import { useLookups } from '../../lib/data.js'
+import { useLoad, useLookups, fetchAll } from '../../lib/data.js'
 import { SCAN_MAX_MS, createScanGate, isSubmitKey, normaliseSerial } from '../../lib/scan.js'
 import CameraScanner from '../../components/CameraScanner.jsx'
 import './Station.css'
@@ -48,6 +48,18 @@ export default function Scanner() {
   const tainted = useRef(false)
   const busyRef = useRef(false)
 
+  // QA station: every piece still waiting for Pass / Reject, so none is stranded by a second scan or a reload.
+  const waiting = useLoad(async () => {
+    if (!isQaStation) return []
+    const rows = await fetchAll(() => supabase.rpc('piece_board', { p_stage: 'FOR_QA' }))
+    return rows.filter((p) => p.status === 'ACTIVE')
+  }, [isQaStation])
+  const reloadWaiting = waiting.reload
+  const openQa = (serial) => setQa((cur) => (cur?.serial === serial ? cur : { serial, rejecting: false }))
+  // A different piece starts with a clean defect form.
+  const qaSerial = qa?.serial
+  useEffect(() => { setDefectNote(''); setDefect(DEFECTS[0]) }, [qaSerial])
+
   const focusCapture = useCallback(() => capture.current?.focus({ preventScroll: true }), [])
   const resetGate = useCallback(() => { gate.current.reset(); tainted.current = false; lastKeyAt.current = 0 }, [])
 
@@ -55,12 +67,16 @@ export default function Scanner() {
 
   const send = useCallback(async (serial, method) => {
     if (!serial || busyRef.current) return
-    busyRef.current = true; setBusy(true); setQa(null)
+    busyRef.current = true; setBusy(true)
     try {
       const piece = await rpc('station_scan', { p_serial: serial, p_method: method })
-      setResult({ ok: true, piece, text: piece.stage_label })
-      record({ serial: piece.serial ?? serial, ok: true, text: [piece.item_name, piece.order_no].filter(Boolean).join(' · ') || piece.stage_label })
-      if (piece.stage === 'FOR_QA') setQa({ serial: piece.serial ?? serial, rejecting: false })
+      const text = piece.already_here ? 'Already at the QA station: record the result' : piece.stage_label
+      setResult({ ok: true, piece, text })
+      record({ serial: piece.serial ?? serial, ok: true, text: piece.already_here ? text : [piece.item_name, piece.order_no].filter(Boolean).join(' · ') || piece.stage_label })
+      if (piece.stage === 'FOR_QA') {
+        setQa((cur) => (cur?.serial === piece.serial ? cur : { serial: piece.serial ?? serial, rejecting: false }))
+        reloadWaiting()
+      }
       beep(true)
     } catch (err) {
       setResult({ ok: false, text: err.message })
@@ -69,7 +85,7 @@ export default function Scanner() {
     } finally {
       busyRef.current = false; setBusy(false); focusCapture()
     }
-  }, [record, focusCapture])
+  }, [record, focusCapture, reloadWaiting])
 
   const refuseSlow = useCallback(() => {
     setResult({ ok: false, text: SLOW_MESSAGE })
@@ -131,7 +147,8 @@ export default function Scanner() {
       const piece = await rpc('qa_result', { p_serial: qa.serial, p_passed: passed, p_defects: defects })
       setResult({ ok: true, piece, text: passed ? 'Passed: Ready' : 'Rejected' })
       record({ serial: qa.serial, ok: true, text: passed ? 'QA passed' : `QA rejected: ${defects}` })
-      setQa(null); setDefectNote(''); setDefect(DEFECTS[0])
+      setQa(null)
+      reloadWaiting()
       beep(true)
     } catch (err) {
       setResult({ ok: false, text: err.message })
@@ -192,6 +209,7 @@ export default function Scanner() {
 
       {isQaStation && qa && (
         <div className="qa-panel">
+          <h2 className="qa-for">Result for <code>{qa.serial}</code></h2>
           <div className="qa-buttons">
             <button className="primary big" disabled={busy} onClick={() => submitQa(true)}>Pass</button>
             <button className="danger big" disabled={busy} onClick={() => setQa({ ...qa, rejecting: !qa.rejecting })}>Reject</button>
@@ -210,6 +228,25 @@ export default function Scanner() {
             </div>
           )}
         </div>
+      )}
+
+      {isQaStation && (
+        <section className="qa-waiting">
+          <h2>Waiting for a result{waiting.data ? ` (${waiting.data.length})` : ''}</h2>
+          {waiting.error && <p className="scan-result err" role="alert">{waiting.error}</p>}
+          {waiting.data?.length === 0 ? <p className="muted">No pieces waiting at QA.</p> : (
+            <ul>
+              {(waiting.data ?? []).map((p) => (
+                <li key={p.id}>
+                  <button type="button" className={qa?.serial === p.serial ? 'primary' : ''} aria-pressed={qa?.serial === p.serial} disabled={busy} onClick={() => openQa(p.serial)}>
+                    <code>{p.serial}</code>
+                    {(p.item_name || p.order_no) && <span>{[p.item_name, p.order_no].filter(Boolean).join(' · ')}</span>}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       )}
 
       {role === 'LEADER' && (

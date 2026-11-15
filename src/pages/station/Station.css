@@ -24,6 +24,10 @@ button.big { font-size: 1.3rem; padding: 16px 24px; border-radius: 12px; min-hei
 .qa-buttons { display: flex; gap: 12px; }
 .qa-buttons button { flex: 1; }
 .qa-defects { display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.qa-for { font-size: 1.15rem; margin: 0; }
+.qa-waiting h2 { font-size: 1.05rem; margin: 8px 0; }
+.qa-waiting ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.qa-waiting li button { width: 100%; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; text-align: left; font-size: 1.1rem; min-height: 48px; }
 .scanner-manual { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
 .scanner-manual .field { flex: 1; min-width: 200px; }
 
