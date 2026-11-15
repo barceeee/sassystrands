@@ -35,7 +35,8 @@ insert into public.receipts (qty, note) values (12, 't4');
 insert into public.pieces (receipt_id, stage)
 select (select id from public.receipts where note = 't4'), case when g <= 8 then 'READY' else 'RSB' end from generate_series(1, 12) g;
 -- p1..p8 READY, p9..p12 RSB
-create temp table t4_p as select (row_number() over (order by id))::int as n, serial, id from public.pieces;
+create temp table t4_p as select (row_number() over (order by id))::int as n, serial, id from public.pieces
+ where receipt_id = (select id from public.receipts where note = 't4');
 grant select on t4_p to authenticated;
 create function pg_temp.s(n int) returns text language sql as $$ select serial from t4_p where t4_p.n = $1 $$;
 create temp table t4_l as select id as line_id, (row_number() over (order by id))::int as n from public.order_lines;
