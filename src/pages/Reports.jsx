@@ -178,7 +178,7 @@ function OrderReport() {
 function ProductionReport() {
   const data = useLoad(async () => {
     const [board, qa] = await Promise.all([
-      must(supabase.rpc('piece_board', { p_include_closed: true })),
+      must(supabase.rpc('piece_stage_counts')),
       fetchAll(() => supabase.from('qa_results').select('id, passed, defects, inspected_at').order('id')),
     ])
     return { board, qa }
@@ -186,13 +186,15 @@ function ProductionReport() {
   if (data.loading) return <Loading />
   if (data.error) return <Alert>{data.error}</Alert>
   const stages = group(data.data.board, (r) => r.stage, (r) => ({ stage: r.stage, label: r.stage_label, sort: r.stage_sort, active: 0, onHold: 0, canceled: 0 }),
-    (g, r) => { if (r.status === 'ACTIVE') g.active++; else if (r.status === 'ON_HOLD') g.onHold++; else g.canceled++ })
+    (g, r) => { if (r.status === 'ACTIVE') g.active += r.pieces; else if (r.status === 'ON_HOLD') g.onHold += r.pieces; else g.canceled += r.pieces })
     .sort((a, b) => a.sort - b.sort)
   const months = group(data.data.qa, (q) => q.inspected_at.slice(0, 7), (q) => ({ month: q.inspected_at.slice(0, 7), inspections: 0, passed: 0, rejected: 0 }),
     (g, q) => { g.inspections++; if (q.passed) g.passed++; else g.rejected++ })
     .sort((a, b) => b.month.localeCompare(a.month))
+  // Group case-insensitively but show the defect as the inspector wrote it.
   const defectKey = (q) => (q.defects ?? '').trim().toLowerCase() || '(not stated)'
-  const defects = group(data.data.qa.filter((q) => !q.passed), defectKey, (q) => ({ defect: defectKey(q), pieces: 0 }), (g) => { g.pieces++ })
+  const defectLabel = (q) => (q.defects ?? '').trim() || '(not stated)'
+  const defects = group(data.data.qa.filter((q) => !q.passed), defectKey, (q) => ({ defect: defectLabel(q), pieces: 0 }), (g) => { g.pieces++ })
     .sort((a, b) => b.pieces - a.pieces).slice(0, 15)
   return (
     <div className="grid">

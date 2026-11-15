@@ -1,24 +1,27 @@
 import { Link } from 'react-router-dom'
 import { supabase, must } from '../supabase.js'
-import { useLoad, useStaff } from '../lib/data.js'
+import { useLoad, useStaff, fetchAll } from '../lib/data.js'
 import { Page, Card, Alert, Loading, Table, Badge } from '../components/ui.jsx'
-import { dateTime } from '../lib/format.js'
+import { dateTime, pieceFor, PRODUCT_NOT_SET } from '../lib/format.js'
 
 // Read-only: inspections are recorded by the QA station's scanner, not here.
 export default function QA() {
   const staff = useStaff()
-  const board = useLoad(() => must(supabase.rpc('piece_board')), [])
+  const board = useLoad(async () => {
+    const [queue, rework] = await Promise.all(['FOR_QA', 'REJECTED'].map((stage) => fetchAll(() => supabase.rpc('piece_board', { p_stage: stage }))))
+    return { queue: queue.filter((r) => r.status === 'ACTIVE'), rework }
+  }, [])
   const recent = useLoad(async () => {
     const rows = await must(supabase.from('qa_results').select('id, passed, defects, inspected_by, inspected_at, pieces(serial, item_id)').order('inspected_at', { ascending: false }).limit(200))
     return rows
   }, [])
 
-  const queue = (board.data ?? []).filter((r) => r.stage === 'FOR_QA' && r.status === 'ACTIVE')
-  const rework = (board.data ?? []).filter((r) => r.stage === 'REJECTED')
+  const queue = board.data?.queue ?? []
+  const rework = board.data?.rework ?? []
   const forColumns = [
     { key: 'serial', label: 'Serial', render: (r) => <Link to={`/pieces/${r.serial}`}>{r.serial}</Link> },
-    { key: 'item_name', label: 'Product', render: (r) => r.item_name ?? '—' },
-    { key: 'client_name', label: 'For', render: (r) => (r.client_name ? `${r.client_name} · ${r.order_no}` : 'Stock') },
+    { key: 'item_name', label: 'Product', render: (r) => r.item_name ?? <span className="muted">{PRODUCT_NOT_SET}</span> },
+    { key: 'client_name', label: 'For', render: (r) => pieceFor(r) },
   ]
 
   return (

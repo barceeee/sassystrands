@@ -9,7 +9,7 @@ export default function Dashboard() {
   const { can, profile } = useAuth()
   const manager = can('inventory.view')
 
-  const board = useLoad(() => must(supabase.rpc('piece_board')), [])
+  const board = useLoad(() => must(supabase.rpc('piece_stage_counts')), [])
   const inv = useLoad(async () => {
     if (!manager) return null
     const [stock, orders, flags] = await Promise.all([
@@ -23,8 +23,10 @@ export default function Dashboard() {
 
   const stages = {}
   for (const r of board.data ?? []) {
+    // Work in production: open pieces only (shipped, in-stock and canceled ones are done).
+    if (r.status === 'CANCELED' || ['SHIPPED', 'IN_STOCK'].includes(r.stage)) continue
     stages[r.stage] ??= { label: r.stage_label, sort: r.stage_sort, pieces: 0 }
-    stages[r.stage].pieces += 1
+    stages[r.stage].pieces += r.pieces
   }
   const forQa = stages.FOR_QA?.pieces ?? 0
   const rejected = stages.REJECTED?.pieces ?? 0

@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase, must, rpc } from '../supabase.js'
 import { useAuth } from '../auth.jsx'
-import { useLoad, useLookups, loadItems } from '../lib/data.js'
+import { useLoad, useLookups, loadItems, fetchAll } from '../lib/data.js'
 import { Page, Card, Alert, Loading, Table, Badge, Field, ItemPicker, ActionResult, useAction } from '../components/ui.jsx'
-import { qty, dateTime } from '../lib/format.js'
+import { qty, dateTime, pieceFor, PRODUCT_NOT_SET } from '../lib/format.js'
 
 // Read-only progress board. Pieces only move when a station scans them.
 export default function Production() {
@@ -16,20 +16,29 @@ export default function Production() {
   const [q, setQ] = useState('')
   const [includeClosed, setIncludeClosed] = useState(false)
   const stage = params.get('stage') ?? ''
-  const board = useLoad(() => must(supabase.rpc('piece_board', { p_include_closed: includeClosed })), [includeClosed])
+  // The table pages through the board (filtered by stage on the server); the tiles use stage totals.
+  const board = useLoad(() => fetchAll(() => supabase.rpc('piece_board', { p_include_closed: includeClosed, p_stage: stage || null })), [includeClosed, stage])
+  const totals = useLoad(() => must(supabase.rpc('piece_stage_counts')), [])
+  const readyForStock = useLoad(async () => (receiving
+    ? (await fetchAll(() => supabase.rpc('piece_board', { p_stage: 'READY' }).is('order_line_id', null))).filter((r) => r.status === 'ACTIVE')
+    : []), [receiving])
 
   const stages = (lookups.data?.stages ?? []).filter((s) => includeClosed || !['SHIPPED', 'IN_STOCK'].includes(s.code))
   const counts = useMemo(() => {
     const c = {}
-    for (const r of board.data ?? []) c[r.stage] = (c[r.stage] ?? 0) + 1
+    for (const r of totals.data ?? []) {
+      if (!includeClosed && (r.status === 'CANCELED' || ['SHIPPED', 'IN_STOCK'].includes(r.stage))) continue
+      c[r.stage] = (c[r.stage] ?? 0) + r.pieces
+    }
     return c
-  }, [board.data])
+  }, [totals.data, includeClosed])
 
   const rows = useMemo(() => {
     const words = q.toLowerCase().split(/\s+/).filter(Boolean)
-    return (board.data ?? []).filter((r) => (!stage || r.stage === stage) &&
-      words.every((w) => `${r.serial} ${r.item_name ?? ''} ${r.client_name ?? 'stock'} ${r.order_no ?? ''} ${r.group_label ?? ''}`.toLowerCase().includes(w)))
-  }, [board.data, stage, q])
+    return (board.data ?? []).filter((r) =>
+      words.every((w) => `${r.serial} ${r.item_name ?? ''} ${pieceFor(r)} ${r.group_label ?? ''}`.toLowerCase().includes(w)))
+  }, [board.data, q])
+  const reloadAll = () => { board.reload(); totals.reload(); readyForStock.reload() }
 
   const pick = (code) => setParams(code && code !== stage ? { stage: code } : {})
 
@@ -38,7 +47,7 @@ export default function Production() {
       <div className="stats">
         {stages.map((s) => (
           <button type="button" key={s.code} className={`stat ${stage === s.code ? 'warn' : ''}`} aria-pressed={stage === s.code} onClick={() => pick(s.code)}>
-            {s.label}<b>{qty(counts[s.code] ?? 0)}</b>
+            {s.label}<b>{totals.data ? qty(counts[s.code] ?? 0) : '…'}</b>
           </button>
         ))}
       </div>
@@ -50,18 +59,18 @@ export default function Production() {
         </select>
         <label><input type="checkbox" checked={includeClosed} onChange={(e) => setIncludeClosed(e.target.checked)} /> Include shipped / in stock / canceled</label>
       </div>
-      <Alert>{board.error}</Alert>
-      {receiving && <ReceiveToStock pieces={(board.data ?? []).filter((r) => r.stage === 'READY' && r.status === 'ACTIVE' && r.order_line_id == null)} locations={lookups.data?.locations ?? []} onDone={board.reload} />}
+      <Alert>{board.error || totals.error || readyForStock.error}</Alert>
+      {receiving && <ReceiveToStock pieces={readyForStock.data ?? []} locations={lookups.data?.locations ?? []} onDone={reloadAll} />}
       {board.loading ? <Loading /> : (
         <Card title={`Pieces (${rows.length})`}>
           <Table
             onRowClick={(r) => navigate(`/pieces/${r.serial}`)}
             columns={[
               { key: 'serial', label: 'Serial', render: (r) => <Link to={`/pieces/${r.serial}`} onClick={(e) => e.stopPropagation()}>{r.serial}</Link> },
-              { key: 'item_name', label: 'Product', render: (r) => r.item_name ?? '—' },
+              { key: 'item_name', label: 'Product', render: (r) => r.item_name ?? <span className="muted">{PRODUCT_NOT_SET}</span> },
               { key: 'stage_label', label: 'Stage', render: (r) => <Badge value={r.stage} label={r.stage_label} /> },
               { key: 'status', label: 'Status', render: (r) => <Badge value={r.status} /> },
-              { key: 'client_name', label: 'For', render: (r) => (r.client_name ? `${r.client_name} · ${r.order_no}` : 'Stock') },
+              { key: 'client_name', label: 'For', render: (r) => pieceFor(r) },
               { key: 'stage_since', label: 'In stage since', render: (r) => dateTime(r.stage_since) },
             ]}
             rows={rows}

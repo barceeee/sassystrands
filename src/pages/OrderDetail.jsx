@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase, must, rpc } from '../supabase.js'
 import { useAuth } from '../auth.jsx'
-import { useLoad, useLookups, loadItems } from '../lib/data.js'
+import { useLoad, useLookups, loadItems, fetchAll } from '../lib/data.js'
 import { Page, Card, Alert, Loading, Table, Badge, Field, ItemPicker, ActionResult, useAction } from '../components/ui.jsx'
 import { date, money, today } from '../lib/format.js'
 import { normaliseSerial } from '../lib/scan.js'
 
 // Stage columns mirror the client's MONITORING CLIENTS ORDER sheet.
 const STAGE_COLS = [
-  { key: 'allocated', label: 'Allocated' },
+  { key: 'allocated', label: 'Received' },
   { key: 'rsb_wefting', label: 'RSB / Weft' },
   { key: 'vent_marinduque', label: 'Vent Marinduque' },
   { key: 'vent_hq_pcr', label: 'Vent HQ/PCR' },
@@ -29,16 +29,20 @@ export default function OrderDetail() {
   const order = useLoad(() => must(supabase.from('v_orders').select('*').eq('id', id).single()), [id])
   const lines = useLoad(() => must(supabase.from('v_order_lines').select('*').eq('order_id', id).order('id')), [id])
   const ors = useLoad(() => (can('or.manage') ? must(supabase.from('or_numbers').select('*').eq('order_id', id).order('seq')) : []), [id])
-  const pieces = useLoad(() => must(supabase.rpc('piece_board', { p_include_closed: true })), [id])
+  const pieces = useLoad(() => fetchAll(() => supabase.rpc('piece_board', { p_order_id: Number(id), p_include_closed: true })), [id])
+  // Open pieces not linked to any order, for the "Link pieces" picker (Inventory only).
+  const unlinkedPieces = useLoad(async () => (receiving
+    ? (await fetchAll(() => supabase.rpc('piece_board').is('order_line_id', null))).filter((p) => p.stage !== 'REJECTED')
+    : []), [receiving])
   const [selected, setSelected] = useState(null)
   const action = useAction()
-  const reload = () => { order.reload(); lines.reload(); pieces.reload() }
+  const reload = () => { order.reload(); lines.reload(); pieces.reload(); unlinkedPieces.reload() }
 
   if (order.loading) return <Loading />
   if (order.error) return <Alert>{order.error}</Alert>
   const o = order.data
-  const myPieces = (pieces.data ?? []).filter((p) => String(p.order_id) === String(id))
-  const unlinked = (pieces.data ?? []).filter((p) => p.order_line_id == null && p.status !== 'CANCELED' && !['SHIPPED', 'IN_STOCK', 'REJECTED'].includes(p.stage))
+  const myPieces = pieces.data ?? []
+  const unlinked = unlinkedPieces.data ?? []
 
   const setStatus = (status) => action.run(async () => {
     await must(supabase.from('orders').update({ status }).eq('id', id))
@@ -100,10 +104,13 @@ export default function OrderDetail() {
       {manage && o.status === 'OPEN' && <AddLine orderId={Number(id)} onSaved={reload} />}
 
       <Card title="Pieces on this order" actions={<Link to="/production">Production board</Link>}>
-        <Alert>{pieces.error}</Alert>
-        {(lines.data ?? []).filter((l) => !l.canceled).map((l) => (
-          <LinePieces key={l.id} line={l} pieces={myPieces.filter((p) => p.order_line_id === l.id)} receiving={receiving} onChanged={reload} />
-        ))}
+        <Alert>{pieces.error || unlinkedPieces.error}</Alert>
+        {/* Canceled lines still show while pieces are linked to them, so those pieces can be unlinked. */}
+        {(lines.data ?? []).map((l) => ({ line: l, linked: myPieces.filter((p) => p.order_line_id === l.id) }))
+          .filter(({ line, linked }) => !line.canceled || linked.length > 0)
+          .map(({ line, linked }) => (
+            <LinePieces key={line.id} line={line} pieces={linked} canShip={o.status === 'OPEN' && !line.canceled} receiving={receiving} onChanged={reload} />
+          ))}
       </Card>
 
       {can('or.manage') && (
@@ -124,10 +131,11 @@ export default function OrderDetail() {
   )
 }
 
-function LinePieces({ line, pieces, receiving, onChanged }) {
+function LinePieces({ line, pieces, canShip, receiving, onChanged }) {
   const action = useAction()
   const ready = pieces.filter((p) => p.stage === 'READY' && p.status === 'ACTIVE')
-  const ship = () => action.run(async () => {
+  const linked = pieces.filter((p) => p.status !== 'CANCELED').length
+  const ship = () => window.confirm(`Ship ${ready.length} piece(s) for ${line.item_name}? This cannot be undone.`) && action.run(async () => {
     await rpc('ship_pieces', { p_serials: ready.map((p) => p.serial) })
     onChanged()
   }, `Shipped ${ready.length} piece${ready.length === 1 ? '' : 's'}.`)
@@ -137,7 +145,7 @@ function LinePieces({ line, pieces, receiving, onChanged }) {
   }, `${p.serial} unlinked.`)
   return (
     <div>
-      <h4>{line.item_name}{line.group_label ? ` · ${line.group_label}` : ''} <span className="muted small">({pieces.length} of {line.qty_ordered} linked)</span></h4>
+      <h4>{line.item_name}{line.group_label ? ` · ${line.group_label}` : ''} <span className="muted small">({linked} of {line.qty_ordered} linked)</span>{line.canceled && <> <Badge value="CANCELED" label="Line canceled" /></>}</h4>
       <Table
         columns={[
           { key: 'serial', label: 'Serial', render: (p) => <Link to={`/pieces/${p.serial}`}>{p.serial}</Link> },
@@ -150,7 +158,7 @@ function LinePieces({ line, pieces, receiving, onChanged }) {
         rows={pieces}
         empty="No pieces linked yet."
       />
-      {receiving && <div className="actions"><button className="primary small" disabled={action.busy || ready.length === 0} onClick={ship}>Ship ready pieces ({ready.length})</button></div>}
+      {receiving && canShip && <div className="actions"><button className="primary small" disabled={action.busy || ready.length === 0} onClick={ship}>Ship ready pieces ({ready.length})</button></div>}
       <ActionResult action={action} />
     </div>
   )
