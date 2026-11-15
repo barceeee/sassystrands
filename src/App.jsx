@@ -15,8 +15,7 @@ import Orders from './pages/Orders.jsx'
 import OrderForm from './pages/OrderForm.jsx'
 import OrderDetail from './pages/OrderDetail.jsx'
 import Production from './pages/Production.jsx'
-import ProductionNew from './pages/ProductionNew.jsx'
-import ProductionDetail from './pages/ProductionDetail.jsx'
+import Piece from './pages/Piece.jsx'
 import Receiving from './pages/Receiving.jsx'
 import Labels from './pages/Labels.jsx'
 import Scanner from './pages/station/Scanner.jsx'
@@ -78,8 +77,7 @@ export default function App() {
         <Route path="orders/new" element={<Guard perm="orders.manage"><OrderForm /></Guard>} />
         <Route path="orders/:id" element={<Guard perm="orders.view"><OrderDetail /></Guard>} />
         <Route path="production" element={<Production />} />
-        <Route path="production/new" element={<Guard perm="production.manage"><ProductionNew /></Guard>} />
-        <Route path="production/:id" element={<ProductionDetail />} />
+        <Route path="pieces/:serial" element={<Piece />} />
         <Route path="receiving" element={<Guard perm="receiving.manage"><Receiving /></Guard>} />
         <Route path="labels" element={<Guard perm="receiving.manage" or="station.lead"><Labels /></Guard>} />
         <Route path="station" element={<Scanner />} />

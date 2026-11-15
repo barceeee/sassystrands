@@ -9,7 +9,7 @@ export default function Dashboard() {
   const { can, profile } = useAuth()
   const manager = can('inventory.view')
 
-  const board = useLoad(() => must(supabase.rpc('production_board')), [])
+  const board = useLoad(() => must(supabase.rpc('piece_board')), [])
   const inv = useLoad(async () => {
     if (!manager) return null
     const [stock, orders, flags] = await Promise.all([
@@ -23,12 +23,11 @@ export default function Dashboard() {
 
   const stages = {}
   for (const r of board.data ?? []) {
-    stages[r.stage] ??= { label: r.stage_label, sort: r.stage_sort, qty: 0, records: 0 }
-    stages[r.stage].qty += r.qty
-    stages[r.stage].records += 1
+    stages[r.stage] ??= { label: r.stage_label, sort: r.stage_sort, pieces: 0 }
+    stages[r.stage].pieces += 1
   }
-  const forQa = stages.FOR_QA?.qty ?? 0
-  const rejected = stages.REJECTED?.qty ?? 0
+  const forQa = stages.FOR_QA?.pieces ?? 0
+  const rejected = stages.REJECTED?.pieces ?? 0
 
   const s = inv.data
   const units = s?.stock.reduce((t, r) => t + r.on_hand, 0) ?? 0
@@ -54,8 +53,8 @@ export default function Dashboard() {
       ) : <Loading />)}
 
       <div className="stats">
-        <Link className={`stat ${forQa ? 'warn' : ''}`} to="/production?stage=FOR_QA">Units awaiting QA<b>{qty(forQa)}</b></Link>
-        <Link className={`stat ${rejected ? 'bad' : ''}`} to="/production?stage=REJECTED">Units rejected, needing rework<b>{qty(rejected)}</b></Link>
+        <Link className={`stat ${forQa ? 'warn' : ''}`} to="/production?stage=FOR_QA">Pieces awaiting QA<b>{qty(forQa)}</b></Link>
+        <Link className={`stat ${rejected ? 'bad' : ''}`} to="/production?stage=REJECTED">Pieces rejected, needing rework<b>{qty(rejected)}</b></Link>
       </div>
 
       <div className="grid">
@@ -65,11 +64,10 @@ export default function Dashboard() {
               rowKey="stage"
               columns={[
                 { key: 'label', label: 'Stage' },
-                { key: 'records', label: 'Records', num: true },
-                { key: 'qty', label: 'Units', num: true },
+                { key: 'pieces', label: 'Pieces', num: true },
               ]}
               rows={Object.entries(stages).map(([stage, v]) => ({ stage, ...v })).sort((a, b) => a.sort - b.sort)}
-              empty="No active production records."
+              empty="No pieces in production."
             />
           )}
         </Card>

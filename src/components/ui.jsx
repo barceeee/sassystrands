@@ -49,7 +49,7 @@ const BADGE_TONES = {
   ERROR: 'red', WARNING: 'amber', INFO: 'blue',
   CANCELED: 'grey', VOIDED: 'grey', ON_HOLD: 'amber', NOT_STARTED: 'grey', NO_LINES: 'grey', CLOSED: 'grey',
   FULFILLED: 'green', APPROVED: 'green', ISSUED: 'green', SOLD: 'grey', READY: 'green', READY_TO_SHIP: 'green',
-  IN_STOCK: 'green', SHIPPED: 'green',
+  IN_STOCK: 'green', SHIPPED: 'green', RECEIVED: 'blue',
   REJECTED: 'red', PARTIAL: 'amber', PARTIALLY_SHIPPED: 'amber', IN_PRODUCTION: 'blue', FOR_QA: 'purple',
   AVAILABLE: 'blue', ACTIVE: 'blue', OPEN: 'blue',
   IN: 'green', OUT: 'red', ADJUST: 'amber', OPENING: 'blue',
