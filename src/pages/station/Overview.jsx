@@ -4,10 +4,9 @@ import { supabase, rpc } from '../../supabase.js'
 import { useAuth } from '../../auth.jsx'
 import { useLoad, fetchAll, useLookups, useStaff } from '../../lib/data.js'
 import { dateTime, titleCase } from '../../lib/format.js'
-import { Page, Card, Table, Badge, Alert, Loading, Field, useAction, ActionResult } from '../../components/ui.jsx'
-import Modal from '../../components/Modal.jsx'
+import { Page, Card, Table, Badge, Alert, Loading, useAction, ActionResult } from '../../components/ui.jsx'
+import FixPieceModal from '../../components/FixPieceModal.jsx'
 
-const FIX_STAGES = ['RECEIVED', 'RSB', 'WEFTING', 'VENT_MARINDUQUE', 'VENT_HQ_PCR', 'VENT_HQ_FIXING', 'CURLING', 'FOR_QA']
 const RECENT_SCANS = 15
 
 // Monday 00:00 local time of the current week.
@@ -33,7 +32,14 @@ export default function Overview() {
   const stageLabel = lookups.data?.stageLabel ?? {}
   const stationLabel = stageLabel[station] ?? station ?? 'No station'
 
-  const board = useLoad(async () => (await rpc('piece_board')).filter((p) => p.stage === station), [station])
+  const board = useLoad(() => (station ? fetchAll(() => supabase.rpc('piece_board', { p_stage: station })) : []), [station])
+  // The QA leader also fixes pieces that already left QA: passed (not yet shipped) or rejected.
+  const isQaStation = station === 'FOR_QA'
+  const outcomes = useLoad(async () => {
+    if (!isQaStation) return []
+    const [ready, rejected] = await Promise.all(['READY', 'REJECTED'].map((stage) => fetchAll(() => supabase.rpc('piece_board', { p_stage: stage }))))
+    return [...ready, ...rejected]
+  }, [isQaStation])
   const scans = useLoad(() => {
     const since = weekStart().toISOString()
     return fetchAll(() => supabase.from('piece_events')
@@ -43,9 +49,9 @@ export default function Overview() {
   }, [station])
 
   const action = useAction()
-  const [fix, setFix] = useState(null) // { serial, to, reason }
+  const [fix, setFix] = useState(null) // piece being fixed
 
-  const reloadAll = () => { board.reload(); scans.reload() }
+  const reloadAll = () => { board.reload(); scans.reload(); outcomes.reload() }
 
   const stats = useMemo(() => {
     const pieces = board.data ?? []
@@ -66,22 +72,15 @@ export default function Overview() {
     p.status === 'ON_HOLD' ? `${p.serial} reactivated.` : `${p.serial} put on hold.`,
   )
 
-  const submitFix = async (e) => {
-    e.preventDefault()
-    const ok = await action.run(
-      () => rpc('leader_fix', { p_serial: fix.serial, p_to_stage: fix.to, p_reason: fix.reason }).then(reloadAll),
-      `${fix.serial} moved to ${stageLabel[fix.to] ?? fix.to}.`,
-    )
-    if (ok) setFix(null)
-  }
-  const openFix = (p) => { action.setError(null); action.setDone(null); setFix({ serial: p.serial, to: FIX_STAGES.find((s) => s !== p.stage), reason: '' }) }
+  const openFix = (p) => { action.setError(null); action.setDone(null); setFix(p) }
+  const fixed = (message) => { setFix(null); action.setDone(message); reloadAll() }
 
   if (!station) {
     return <Page title="Station overview"><Alert>Your account has no station assigned. Ask an administrator to set one.</Alert></Page>
   }
 
   const pieceColumns = [
-    { label: 'Serial', render: (p) => <code>{p.serial}</code> },
+    { label: 'Serial', render: (p) => <Link to={`/pieces/${p.serial}`}><code>{p.serial}</code></Link> },
     { label: 'Product', render: (p) => p.item_name ?? '—' },
     { label: 'Order', render: (p) => (p.order_no ? `${p.order_no}${p.client_name ? ` · ${p.client_name}` : ''}` : '—') },
     { label: 'Arrived', render: (p) => dateTime(p.stage_since) },
@@ -98,6 +97,22 @@ export default function Overview() {
     },
   ]
 
+  const outcomeColumns = [
+    { label: 'Serial', render: (p) => <Link to={`/pieces/${p.serial}`}><code>{p.serial}</code></Link> },
+    { label: 'Stage', render: (p) => <Badge value={p.stage} label={p.stage_label} /> },
+    { label: 'Product', render: (p) => p.item_name ?? '—' },
+    { label: 'Order', render: (p) => (p.order_no ? `${p.order_no}${p.client_name ? ` · ${p.client_name}` : ''}` : '—') },
+    { label: 'Since', render: (p) => dateTime(p.stage_since) },
+    {
+      label: '', render: (p) => (
+        <div className="actions">
+          <Link className="button" to={`/labels?serials=${p.serial}`}>Reprint label</Link>
+          <button disabled={action.busy} onClick={() => openFix(p)}>Fix</button>
+        </div>
+      ),
+    },
+  ]
+
   const scanColumns = [
     { label: 'Serial', render: (r) => <code>{r.pieces?.serial ?? '—'}</code> },
     { label: 'By', render: (r) => staff[r.created_by] ?? '—' },
@@ -108,7 +123,7 @@ export default function Overview() {
 
   return (
     <Page title={`${stationLabel} overview`} actions={<Link to="/station">Open the scanner</Link>}>
-      <Alert>{board.error || scans.error}</Alert>
+      <Alert>{board.error || scans.error || outcomes.error}</Alert>
       <ActionResult action={action} />
 
       <div className="stats">
@@ -123,33 +138,17 @@ export default function Overview() {
         {board.loading && !board.data ? <Loading /> : <Table columns={pieceColumns} rows={board.data} empty="No pieces at this station." />}
       </Card>
 
+      {isQaStation && (
+        <Card title="Passed or rejected (not shipped yet)">
+          {outcomes.loading && !outcomes.data ? <Loading /> : <Table columns={outcomeColumns} rows={outcomes.data} empty="No passed or rejected pieces waiting." />}
+        </Card>
+      )}
+
       <Card title="Recent scans">
         {scans.loading && !scans.data ? <Loading /> : <Table columns={scanColumns} rows={scans.data?.slice(0, RECENT_SCANS)} empty="No scans at this station this week." />}
       </Card>
 
-      <Modal
-        open={!!fix}
-        onClose={() => setFix(null)}
-        title={fix ? `Fix ${fix.serial}` : 'Fix'}
-        footer={<>
-          <button type="button" onClick={() => setFix(null)}>Cancel</button>
-          <button type="submit" form="fix-form" className="primary" disabled={action.busy}>Move piece</button>
-        </>}
-      >
-        {fix && (
-          <form id="fix-form" onSubmit={submitFix} className="form">
-            <Alert>{action.error}</Alert>
-            <Field label="Move to">
-              <select value={fix.to} onChange={(e) => setFix({ ...fix, to: e.target.value })}>
-                {FIX_STAGES.map((s) => <option key={s} value={s}>{stageLabel[s] ?? titleCase(s)}</option>)}
-              </select>
-            </Field>
-            <Field label="Reason" hint="Required. Recorded with the fix." wide>
-              <input value={fix.reason} onChange={(e) => setFix({ ...fix, reason: e.target.value })} autoComplete="off" />
-            </Field>
-          </form>
-        )}
-      </Modal>
+      <FixPieceModal piece={fix} stageLabel={stageLabel} onClose={() => setFix(null)} onDone={fixed} />
     </Page>
   )
 }
