@@ -3,7 +3,7 @@ import { supabase } from '../supabase.js'
 import { useAuth } from '../auth.jsx'
 import { useLoad } from '../lib/data.js'
 import { Page, Card, Alert, Loading, Table, Badge, Field, ActionResult, useAction } from '../components/ui.jsx'
-import { ROLE_LABELS } from '../lib/perms.js'
+import { ROLE_LABELS, isStationRole } from '../lib/perms.js'
 import { dateTime } from '../lib/format.js'
 
 const ROLE_HELP = {
@@ -12,6 +12,29 @@ const ROLE_HELP = {
   INVENTORY: 'Everything except user management',
   PRODUCTION: 'Production records and stages only',
   QA: 'View production; record QA inspections',
+  STATION: 'Scans pieces in and out at one station',
+  LEADER: 'Scans at one station and leads that team',
+}
+
+// Stages that are not stations (no one scans at these).
+const NON_STATIONS = ['ALLOCATED', 'REJECTED', 'READY', 'SHIPPED', 'IN_STOCK']
+
+function useStations() {
+  const stages = useLoad(async () => {
+    const { data, error } = await supabase.from('production_stages').select('code,label,sort_order').order('sort_order')
+    if (error) throw error
+    return data.filter((x) => !NON_STATIONS.includes(x.code))
+  }, [])
+  return stages.data ?? []
+}
+
+function StationSelect({ stations, value, onChange, disabled, label }) {
+  return (
+    <select value={value ?? ''} disabled={disabled} onChange={(e) => onChange(e.target.value)} aria-label={label} required>
+      <option value="" disabled>Choose a station</option>
+      {stations.map((x) => <option key={x.code} value={x.code}>{x.label}</option>)}
+    </select>
+  )
 }
 
 // Creating users and changing passwords happens in the admin-users Edge Function (service key stays server-side).
@@ -31,12 +54,13 @@ export default function Users() {
   const users = useLoad(async () => (await adminUsers({ action: 'list' })).users, [])
   const action = useAction()
   const [resetting, setResetting] = useState(null)
+  const stations = useStations()
 
   const update = (u, patch, msg) => action.run(async () => { await adminUsers({ action: 'update', id: u.id, ...patch }); users.reload() }, msg)
 
   return (
     <Page title="Users" subtitle="Staff sign in with a username. Each role sees only its own modules.">
-      <NewUser onSaved={users.reload} />
+      <NewUser onSaved={users.reload} stations={stations} />
       {resetting && <ResetPassword user={resetting} onClose={() => setResetting(null)} />}
       <Card>
         <ActionResult action={action} />
@@ -46,10 +70,14 @@ export default function Users() {
             columns={[
               { key: 'full_name', label: 'Name', render: (u) => <>{u.full_name}<div className="muted small">{u.username}{u.email ? ` · ${u.email}` : ''}</div></> },
               { key: 'role', label: 'Role', render: (u) => (
-                <select value={u.role} disabled={u.id === profile.id || action.busy} onChange={(e) => update(u, { role: e.target.value }, `${u.full_name} is now ${ROLE_LABELS[e.target.value]}.`)} aria-label={`Role for ${u.full_name}`}>
+                <select value={u.role} disabled={u.id === profile.id || action.busy} onChange={(e) => update(u, { role: e.target.value, ...(isStationRole(e.target.value) ? { station: u.station ?? stations[0]?.code } : {}) }, `${u.full_name} is now ${ROLE_LABELS[e.target.value]}.`)} aria-label={`Role for ${u.full_name}`}>
                   {Object.keys(ROLE_LABELS).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
                 </select>
               ) },
+              { key: 'station', label: 'Station', render: (u) => isStationRole(u.role) ? (
+                <StationSelect stations={stations} value={u.station} disabled={action.busy} label={`Station for ${u.full_name}`}
+                  onChange={(code) => update(u, { station: code }, `${u.full_name} now works at ${stations.find((x) => x.code === code)?.label ?? code}.`)} />
+              ) : <span className="muted">-</span> },
               { key: 'active', label: 'Status', render: (u) => <Badge value={u.active ? 'ACTIVE' : 'CANCELED'} label={u.active ? 'Active' : 'Deactivated'} /> },
               { key: 'last_sign_in_at', label: 'Last sign-in', render: (u) => dateTime(u.last_sign_in_at) },
               { key: 'act', label: '', render: (u) => (
@@ -72,13 +100,13 @@ export default function Users() {
   )
 }
 
-function NewUser({ onSaved }) {
-  const [f, setF] = useState({ username: '', full_name: '', role: 'PRODUCTION', password: '', email: '' })
+function NewUser({ onSaved, stations }) {
+  const [f, setF] = useState({ username: '', full_name: '', role: 'PRODUCTION', station: '', password: '', email: '' })
   const action = useAction()
   const submit = async (e) => {
     e.preventDefault()
     const ok = await action.run(() => adminUsers({ action: 'create', ...f }), `User ${f.username} created. Give them their username and password.`)
-    if (ok) { setF({ username: '', full_name: '', role: f.role, password: '', email: '' }); onSaved() }
+    if (ok) { setF({ username: '', full_name: '', role: f.role, station: f.station, password: '', email: '' }); onSaved() }
   }
   return (
     <Card title="Add a user">
@@ -90,6 +118,11 @@ function NewUser({ onSaved }) {
             {Object.keys(ROLE_LABELS).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
           </select>
         </Field>
+        {isStationRole(f.role) && (
+          <Field label="Station" hint="The station this person scans at">
+            <StationSelect stations={stations} value={f.station} onChange={(code) => setF({ ...f, station: code })} label="Station" />
+          </Field>
+        )}
         <Field label="Temporary password" hint="At least 8 characters"><input type="password" autoComplete="new-password" minLength={8} value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} required /></Field>
         <Field label="Email (optional)" hint="Only if they should sign in with an email instead"><input type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></Field>
         <div className="form-actions"><button className="primary" disabled={action.busy}>Create user</button></div>

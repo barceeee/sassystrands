@@ -2,12 +2,21 @@
 // service-role key, so it lives here instead of in the browser.
 //
 // POST { action: "list" }
-// POST { action: "create", username, full_name, role, password, email? }
-// POST { action: "update", id, full_name?, role?, active? }
+// POST { action: "create", username, full_name, role, station?, password, email? }
+// POST { action: "update", id, full_name?, role?, station?, active? }
 // POST { action: "reset_password", id, password }
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
-const ROLES = ["OWNER", "ADMIN", "INVENTORY", "PRODUCTION", "QA"];
+const ROLES = ["OWNER", "ADMIN", "INVENTORY", "PRODUCTION", "QA", "STATION", "LEADER"];
+const STATION_ROLES = ["STATION", "LEADER"];
+
+// Station roles must name a station; every other role has none.
+function stationFor(role: string, station: unknown): string | null {
+  if (!STATION_ROLES.includes(role)) return null;
+  const code = String(station ?? "").trim();
+  if (!code) throw new HttpError(400, "Choose a station.");
+  return code;
+}
 // Staff sign in with a username; Supabase Auth needs an email, so usernames map to an
 // address on a reserved, never-deliverable domain (RFC 2606).
 const USERNAME_DOMAIN = "users.sassystrands.invalid";
@@ -81,6 +90,7 @@ async function create(body: Record<string, unknown>) {
   }
   if (!fullName) throw new HttpError(400, "Full name is required.");
   if (!ROLES.includes(role)) throw new HttpError(400, "Choose a valid role.");
+  const station = stationFor(role, body.station);
   checkPassword(body.password);
   const { data: taken } = await admin.from("profiles").select("id").eq("username", username).maybeSingle();
   if (taken) throw new HttpError(409, "That username is already used.");
@@ -95,7 +105,7 @@ async function create(body: Record<string, unknown>) {
   if (error) throw new HttpError(400, error.message);
   const { error: pErr } = await admin
     .from("profiles")
-    .insert({ id: data.user.id, username, full_name: fullName, role, active: true });
+    .insert({ id: data.user.id, username, full_name: fullName, role, station, active: true });
   if (pErr) {
     await admin.auth.admin.deleteUser(data.user.id);
     throw new HttpError(400, pErr.message);
@@ -118,6 +128,10 @@ async function update(caller: { id: string }, body: Record<string, unknown>) {
     patch.role = body.role;
   }
   if (body.active !== undefined) patch.active = Boolean(body.active);
+  if (body.role !== undefined || body.station !== undefined) {
+    const finalRole = String(patch.role ?? target.role);
+    patch.station = stationFor(finalRole, body.station !== undefined ? body.station : target.station);
+  }
 
   if (id === caller.id && (patch.active === false || (patch.role && patch.role !== target.role))) {
     throw new HttpError(400, "You cannot deactivate yourself or change your own role.");
