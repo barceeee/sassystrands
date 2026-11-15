@@ -19,6 +19,8 @@ test('LEADER lands on the overview and may use scanner, account and progress pag
   assert.equal(allowedPath('LEADER', '/account'), true)
   assert.equal(allowedPath('LEADER', '/production'), true)
   assert.equal(allowedPath('LEADER', '/pieces/SS-000001'), true)
+  assert.equal(allowedPath('LEADER', '/labels'), true)
+  assert.equal(allowedPath('LEADER', '/receiving'), false)
   assert.equal(allowedPath('LEADER', '/users'), false)
   assert.equal(allowedPath('LEADER', '/'), false)
   assert.equal(allowedPath('LEADER', '/productionx'), false)

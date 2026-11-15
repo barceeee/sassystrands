@@ -45,7 +45,7 @@ export default function ProductionDetail() {
       )}
       {!closed && <MoveRecord record={r} stages={lookups.data?.stages ?? []} locations={lookups.data?.locations ?? []} onSaved={(newId) => (newId && newId !== r.id ? navigate(`/production/${newId}`) : reload())} />}
 
-      <Card title="Pieces & serial numbers" actions={can('production.manage') && (units.data?.length ?? 0) > 0 && <Link className="button" to={`/production/${r.id}/labels`}>Print labels</Link>}>
+      <Card title="Pieces & serial numbers">
         {units.data?.length
           ? <div className="actions">{units.data.map((u) => <span key={u.id} className="badge badge-grey">{u.serial}</span>)}</div>
           : <p className="muted">No pieces.</p>}

@@ -90,6 +90,7 @@ export default function Overview() {
     {
       label: '', render: (p) => (
         <div className="actions">
+          <Link className="button" to={`/labels?serials=${p.serial}`}>Reprint label</Link>
           <button disabled={action.busy} onClick={() => openFix(p)}>Fix</button>
           <button disabled={action.busy} onClick={() => toggleHold(p)}>{p.status === 'ON_HOLD' ? 'Reactivate' : 'Hold'}</button>
         </div>

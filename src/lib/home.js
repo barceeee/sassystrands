@@ -14,7 +14,7 @@ export function allowedPath(role, path) {
   const p = path.length > 1 ? path.replace(/\/+$/, '') : path
   if (role === 'STATION') return p === '/station'
   if (role === 'LEADER') {
-    return under(p, '/station') || p === '/account' || under(p, '/production') || under(p, '/pieces')
+    return under(p, '/station') || p === '/account' || under(p, '/production') || under(p, '/pieces') || p === '/labels'
   }
   return !under(p, '/station')
 }

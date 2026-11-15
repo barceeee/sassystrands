@@ -17,7 +17,8 @@ import OrderDetail from './pages/OrderDetail.jsx'
 import Production from './pages/Production.jsx'
 import ProductionNew from './pages/ProductionNew.jsx'
 import ProductionDetail from './pages/ProductionDetail.jsx'
-import ProductionLabels from './pages/ProductionLabels.jsx'
+import Receiving from './pages/Receiving.jsx'
+import Labels from './pages/Labels.jsx'
 import Scanner from './pages/station/Scanner.jsx'
 import Overview from './pages/station/Overview.jsx'
 import { homeFor, allowedPath } from './lib/home.js'
@@ -30,9 +31,9 @@ import Lookups from './pages/Lookups.jsx'
 import Users from './pages/Users.jsx'
 import Account from './pages/Account.jsx'
 
-function Guard({ perm, children }) {
+function Guard({ perm, or, children }) {
   const { can, role } = useAuth()
-  return can(perm) ? children : <Navigate to={homeFor(role)} replace />
+  return can(perm) || (or && can(or)) ? children : <Navigate to={homeFor(role)} replace />
 }
 
 export default function App() {
@@ -79,7 +80,8 @@ export default function App() {
         <Route path="production" element={<Production />} />
         <Route path="production/new" element={<Guard perm="production.manage"><ProductionNew /></Guard>} />
         <Route path="production/:id" element={<ProductionDetail />} />
-        <Route path="production/:id/labels" element={<Guard perm="production.manage"><ProductionLabels /></Guard>} />
+        <Route path="receiving" element={<Guard perm="receiving.manage"><Receiving /></Guard>} />
+        <Route path="labels" element={<Guard perm="receiving.manage" or="station.lead"><Labels /></Guard>} />
         <Route path="station" element={<Scanner />} />
         <Route path="station/overview" element={<Overview />} />
         <Route path="qa" element={<Guard perm="qa.view"><QA /></Guard>} />

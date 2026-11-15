@@ -15,6 +15,7 @@ export const NAV = [
   { to: '/inventory/counts', label: 'Counts & audit', perm: 'inventory.view' },
   { to: '/inventory/bundles', label: 'Sale bundles', perm: 'inventory.view' },
   { to: '/orders', label: 'Client orders', perm: 'orders.view' },
+  { to: '/receiving', label: 'Receiving', perm: 'receiving.manage' },
   { to: '/production', label: 'Production', perm: 'production.view' },
   { to: '/qa', label: 'QA inspection', perm: 'qa.view' },
   { to: '/or-numbers', label: 'OR numbers', perm: 'or.manage' },
