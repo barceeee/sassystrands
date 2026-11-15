@@ -44,23 +44,34 @@ Requires Node 20+ (tested on Node 24).
 7. Import the client files under **Spreadsheet import** in this order: inventory tracker, then available stocks,
    then client orders.
 
-Tests: `npm test` (description parsing). To also test against the real workbooks:
+Tests: `npm test` (parsers and scanner logic). Database checks live in `supabase/tests/*.sql`; each runs in
+`begin; … rollback;` and raises an exception on failure (run them in the SQL editor or with `execute_sql`). To also test against the real workbooks:
 `XLSX_DIR="path/to/folder/with/the/xlsx" npm test`.
 
 Deploy: `vercel.json` builds the SPA (`npm run build` → `dist/`) with a catch-all rewrite. Set the two
 `VITE_SUPABASE_*` variables in the Vercel project. Never set the service-role key there.
 
+## Database
+
+The live `sassy-strands-inventory` project's migration history was applied through the Supabase MCP, so its
+recorded version stamps (e.g. `20261115140226…`) do not match the filenames in `supabase/migrations/`
+(`20261116000100…`). Do **not** run `supabase db push` against the live project without first aligning the history
+with `supabase migration repair`; it would try to re-apply migrations that are already there. A fresh project simply
+applies the files in filename order.
+
 ## Roles
 
-| Role | Can do |
-|---|---|
-| Owner, Admin | Everything, including user management |
-| Inventory | Everything except user management |
-| Production | Production records only: create, move between RSB / Wefting / Ventilation / Curling / QA, hold, cancel |
-| QA | View production records; record inspections (approve/reject) |
+| Role | Tied to a station? | Home screen | Can do |
+|---|---|---|---|
+| Owner, Admin | no | Dashboard | View progress. Manage users (assign roles and stations). Stock, orders, imports, reports. |
+| Inventory | no | Dashboard | View progress. Receive raw hair, print/reprint labels, link pieces to orders, ship, receive to stock, hold / cancel pieces. Stock, orders, imports, reports. |
+| Production, QA | no | Dashboard | View progress only. |
+| Station | yes, one stage | Scanner (only screen) | Scan pieces into their station. QA station: Pass / Reject after the scan. |
+| Team leader | yes, one stage | Station overview | Everything Station can, plus station figures, fix wrong scans (any piece, with a reason), hold / cancel pieces at their station, reprint labels, manual serial entry for damaged labels. |
 
-Enforced in the database (`has_perm()` in RLS policies and in every workflow function). The UI hides what a role
-can't use, but the server rejects such requests anyway; the migrations were tested by simulating each role.
+Enforced in the database (`has_perm()` in RLS policies and in every workflow function). Only `station_scan`,
+`qa_result` and `leader_fix` change a piece's stage. The UI hides what a role can't use, but the server rejects such
+requests anyway; the migrations were tested by simulating each role (`supabase/tests/`).
 
 ## How the data model replaces the sheets
 
@@ -71,11 +82,20 @@ can't use, but the server rejects such requests anyway; the migrations were test
   OUT movements that would make stock negative are rejected.
 - **Counts** (physical audits, closure-sheet snapshots, available-stock ledger lines, manual counts) are stored next
   to the computed balance with the variance. Posting a count turns the variance into an `ADJUST`.
-- **Orders → production records → QA.** Each order line's units move through production records (one record = a
-  batch of one product in one stage). Moving part of a record splits it. QA approves into *Ready* or rejects into
-  *Rework*. Ready units are shipped (order work) or received to stock (an `IN` movement).
+- **Pieces, tracked one by one.** Every piece of hair has its own serial (`SS-000001`) and Code 128 label, and
+  carries its own stage and history (`piece_events`). The flow:
+  1. **Receive** (Inventory): "N pieces arrived at HQ" creates N pieces in *Received at HQ* and opens the label sheet.
+  2. **Station scans**: each station (RSB, Wefting, Ventilation – Marinduque, Ventilation – HQ/PCR, HQ fixing,
+     Curling) scans a piece to say it now holds it. Skipped or repeated stages are accepted and flagged "out of order".
+  3. **QA**: the QA station scans the piece, then records Pass (*Ready*) or Reject (*Rejected*, with defects).
+     Rejected pieces go back into production when any station scans them.
+  4. **Leader fix**: a station's team leader corrects a wrong scan by moving the piece to another stage with a reason.
+  5. **Link / ship / stock** (Inventory): pieces arrive unlinked and are linked to client order lines later (which
+     also sets their product). Ready linked pieces are shipped; ready unlinked pieces are received to stock (an `IN`
+     movement with the chosen product).
+  Order lines and dashboards count pieces, so the figures always match what the floor scanned.
 - **Audit trail:** every insert/update/delete on the main tables is written to `audit_log` with the user and time.
-  Movements, production events and QA inspections also store who did them.
+  Movements, piece events (scans, QA results, fixes, links, status changes) and QA results also store who did them.
 
 ## Assumptions to confirm with the client
 
@@ -102,15 +122,15 @@ can't use, but the server rejects such requests anyway; the migrations were test
 8. **OR numbers** are BIR official-receipt booklets registered as number ranges. Each OR is issued once, for a
    payment amount, optionally linked to a client order, and can be voided with a reason (never deleted). ORs are not
    linked to stock movements. Sequential use is shown ("next available") but not forced.
-9. **Order import:** each client block becomes one order (`IMP-<file>-NNN`). Each stage quantity becomes a production
-   record in that stage, so the order shows the same breakdown as the sheet. The status notes CANCELED/CANCELLED cancel
+9. **Order import:** each client block becomes one order (`IMP-<file>-NNN`). Each stage quantity becomes that many
+   pieces (with serials, labels printable from the import page) in that stage, so the order shows the same breakdown as the sheet. The status notes CANCELED/CANCELLED cancel
    the line; REPLACE, OK, UPDATED and FINISH DELIVERED are kept as line notes. SAMBIA and UPRODUCED rows are kept as
    sub-group labels. Lines after a TOTAL row with no new client name are a second order for the previous client.
    Lines with no ordered quantity, or a description without SD/DD (e.g. "STRAIGHT SINGLE DONOR"), are not imported
    and are flagged.
-10. **"Ready" comes after QA.** The sheet lists Ready before Curling. In the app, curled items go Curling → Awaiting QA →
+10. **"Ready" comes after QA.** The sheet lists Ready before Curling. In the app, curled items go Curling → QA station →
     Ready, so every finished product passes QA. Imported "Ready" quantities are taken as already approved.
-11. **RSB** is treated as one production stage between Allocated and Wefting. Its exact meaning wasn't in the files.
+11. **RSB** is treated as one production stage between Received at HQ and Wefting. Its exact meaning wasn't in the files.
 12. **Non-standard lace sizes** in orders (6x4, 6x5, 13x7) are accepted and marked non-standard.
 13. **Products without a price** count as ₱0 in stock value and are listed as "unpriced" in reports.
 14. `RAW HAIR CODING.xlsx` (raw-hair purchase lots) was provided but is outside this scope; nothing imports it yet.
@@ -131,3 +151,14 @@ Formula text typed as a literal value (`"=C5*D5"`) and numbers stored as text ar
 - One currency (PHP). Today's date is the browser's local date.
 - Imports run in a single transaction per file and can be rolled back from the import page. Rollback is refused if
   stock has since been shipped against the imported orders. The same file (by SHA-256) can't be imported twice.
+
+## Go-live checklist
+
+Before real data goes in:
+
+- **Dummy accounts:** delete, or give new passwords to, the test accounts `admin`, `inventory`, `production`,
+  `qauser`, `station.rsb`, `station.qa`, `leader.rsb` and `leader.qa`. They share one test password that is in the
+  git history.
+- **Dev quick login:** remove `src/components/DevQuickLogin.jsx` (and `DevQuickLogin.css`) and its two lines in
+  `src/pages/Login.jsx` (the import and the `<DevQuickLogin />` element).
+- Run `npm run test-users -- --remove` if the `test.*` accounts were ever created.

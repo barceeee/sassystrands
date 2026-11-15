@@ -1,7 +1,8 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './auth.jsx'
 import Layout from './components/Layout.jsx'
-import { Forbidden, Loading } from './components/ui.jsx'
+import { Loading } from './components/ui.jsx'
 import Login from './pages/Login.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Stock from './pages/Stock.jsx'
@@ -14,8 +15,12 @@ import Orders from './pages/Orders.jsx'
 import OrderForm from './pages/OrderForm.jsx'
 import OrderDetail from './pages/OrderDetail.jsx'
 import Production from './pages/Production.jsx'
-import ProductionNew from './pages/ProductionNew.jsx'
-import ProductionDetail from './pages/ProductionDetail.jsx'
+import Piece from './pages/Piece.jsx'
+import Receiving from './pages/Receiving.jsx'
+import Labels from './pages/Labels.jsx'
+import Scanner from './pages/station/Scanner.jsx'
+import Overview from './pages/station/Overview.jsx'
+import { homeFor, allowedPath } from './lib/home.js'
 import QA from './pages/QA.jsx'
 import OrNumbers from './pages/OrNumbers.jsx'
 import Reports from './pages/Reports.jsx'
@@ -25,13 +30,25 @@ import Lookups from './pages/Lookups.jsx'
 import Users from './pages/Users.jsx'
 import Account from './pages/Account.jsx'
 
-function Guard({ perm, children }) {
-  const { can } = useAuth()
-  return can(perm) ? children : <Forbidden />
+function Guard({ perm, or, children }) {
+  const { can, role } = useAuth()
+  return can(perm) || (or && can(or)) ? children : <Navigate to={homeFor(role)} replace />
 }
 
 export default function App() {
-  const { loading, session, profile, signOut } = useAuth()
+  const { loading, session, profile, role, signOut } = useAuth()
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
+  // Set while the sign-in screen is showing, so the first render after a fresh sign-in goes to the
+  // role's home once (a page reload keeps the current URL).
+  const justSignedIn = useRef(false)
+  useEffect(() => {
+    if (session === null) justSignedIn.current = true
+    else if (role && justSignedIn.current) {
+      justSignedIn.current = false
+      navigate(homeFor(role), { replace: true })
+    }
+  }, [session, role, navigate])
   if (loading) return <div className="center-screen"><Loading /></div>
   if (!session) return <Login />
   if (!profile?.active) {
@@ -45,6 +62,7 @@ export default function App() {
       </div>
     )
   }
+  if (!allowedPath(role, pathname)) return <Navigate to={homeFor(role)} replace />
   return (
     <Routes>
       <Route element={<Layout />}>
@@ -59,8 +77,11 @@ export default function App() {
         <Route path="orders/new" element={<Guard perm="orders.manage"><OrderForm /></Guard>} />
         <Route path="orders/:id" element={<Guard perm="orders.view"><OrderDetail /></Guard>} />
         <Route path="production" element={<Production />} />
-        <Route path="production/new" element={<Guard perm="production.manage"><ProductionNew /></Guard>} />
-        <Route path="production/:id" element={<ProductionDetail />} />
+        <Route path="pieces/:serial" element={<Piece />} />
+        <Route path="receiving" element={<Guard perm="receiving.manage"><Receiving /></Guard>} />
+        <Route path="labels" element={<Guard perm="receiving.manage" or="station.lead"><Labels /></Guard>} />
+        <Route path="station" element={<Scanner />} />
+        <Route path="station/overview" element={<Overview />} />
         <Route path="qa" element={<Guard perm="qa.view"><QA /></Guard>} />
         <Route path="or-numbers" element={<Guard perm="or.manage"><OrNumbers /></Guard>} />
         <Route path="reports" element={<Guard perm="reports.view"><Reports /></Guard>} />

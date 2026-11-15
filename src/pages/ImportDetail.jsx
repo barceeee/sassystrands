@@ -32,7 +32,7 @@ export default function ImportDetail() {
     <Page
       title={b.file_name}
       subtitle={`Imported ${dateTime(b.imported_at)} by ${staff[b.imported_by] ?? '—'} · ${open} open error/warning flag(s)`}
-      actions={<><Link to="/imports">← Imports</Link><button className="danger" onClick={remove} disabled={action.busy}>Delete import</button></>}
+      actions={<><Link to="/imports">← Imports</Link><Link className="button" to={`/labels?import=${b.id}`}>Print labels</Link><button className="danger" onClick={remove} disabled={action.busy}>Delete import</button></>}
     >
       <div className="stats">
         {Object.entries(b.summary ?? {}).filter(([, v]) => typeof v === 'number').map(([k, v]) => (

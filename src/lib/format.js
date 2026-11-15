@@ -8,6 +8,10 @@ export const dateTime = (v) => (v ? new Date(v).toLocaleString('en-PH', { dateSt
 export const today = () => new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
 export const titleCase = (s) => (s ?? '').toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 
+// How a piece's product and destination read everywhere (boards, piece page, QA).
+export const PRODUCT_NOT_SET = 'Not set yet'
+export const pieceFor = (p) => (p.order_no ? `${p.client_name ? `${p.client_name} · ` : ''}${p.order_no}` : p.stage === 'IN_STOCK' ? 'Stock' : 'Not linked to an order')
+
 export function downloadCsv(filename, rows, columns) {
   const esc = (v) => {
     const s = v === null || v === undefined ? '' : String(v)

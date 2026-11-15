@@ -178,31 +178,33 @@ function OrderReport() {
 function ProductionReport() {
   const data = useLoad(async () => {
     const [board, qa] = await Promise.all([
-      must(supabase.rpc('production_board', { p_include_closed: true })),
-      fetchAll(() => supabase.from('qa_inspections').select('passed_qty, rejected_qty, result, defects, inspected_at')),
+      must(supabase.rpc('piece_stage_counts')),
+      fetchAll(() => supabase.from('qa_results').select('id, passed, defects, inspected_at').order('id')),
     ])
     return { board, qa }
   }, [])
   if (data.loading) return <Loading />
   if (data.error) return <Alert>{data.error}</Alert>
   const stages = group(data.data.board, (r) => r.stage, (r) => ({ stage: r.stage, label: r.stage_label, sort: r.stage_sort, active: 0, onHold: 0, canceled: 0 }),
-    (g, r) => { if (r.status === 'ACTIVE') g.active += r.qty; else if (r.status === 'ON_HOLD') g.onHold += r.qty; else g.canceled += r.qty })
+    (g, r) => { if (r.status === 'ACTIVE') g.active += r.pieces; else if (r.status === 'ON_HOLD') g.onHold += r.pieces; else g.canceled += r.pieces })
     .sort((a, b) => a.sort - b.sort)
   const months = group(data.data.qa, (q) => q.inspected_at.slice(0, 7), (q) => ({ month: q.inspected_at.slice(0, 7), inspections: 0, passed: 0, rejected: 0 }),
-    (g, q) => { g.inspections++; g.passed += q.passed_qty; g.rejected += q.rejected_qty })
+    (g, q) => { g.inspections++; if (q.passed) g.passed++; else g.rejected++ })
     .sort((a, b) => b.month.localeCompare(a.month))
-  const defects = group(data.data.qa.filter((q) => q.rejected_qty > 0), (q) => (q.defects ?? '').trim().toLowerCase() || '(not stated)',
-    (q) => ({ defect: (q.defects ?? '').trim().toLowerCase() || '(not stated)', units: 0 }), (g, q) => { g.units += q.rejected_qty })
-    .sort((a, b) => b.units - a.units).slice(0, 15)
+  // Group case-insensitively but show the defect as the inspector wrote it.
+  const defectKey = (q) => (q.defects ?? '').trim().toLowerCase() || '(not stated)'
+  const defectLabel = (q) => (q.defects ?? '').trim() || '(not stated)'
+  const defects = group(data.data.qa.filter((q) => !q.passed), defectKey, (q) => ({ defect: defectLabel(q), pieces: 0 }), (g) => { g.pieces++ })
+    .sort((a, b) => b.pieces - a.pieces).slice(0, 15)
   return (
     <div className="grid">
-      <Card title="Units by production stage">
+      <Card title="Pieces by production stage">
         <Table rowKey="stage" columns={[
           { key: 'label', label: 'Stage' },
           { key: 'active', label: 'Active', num: true },
           { key: 'onHold', label: 'On hold', num: true },
           { key: 'canceled', label: 'Canceled', num: true },
-        ]} rows={stages} />
+        ]} rows={stages} empty="No pieces yet." />
       </Card>
       <Card title="QA outcomes by month">
         <Table rowKey="month" columns={[
@@ -214,7 +216,7 @@ function ProductionReport() {
         ]} rows={months} empty="No inspections yet." />
       </Card>
       <Card title="Most common rejection reasons">
-        <Table rowKey="defect" columns={[{ key: 'defect', label: 'Defect' }, { key: 'units', label: 'Units rejected', num: true }]} rows={defects} empty="No rejections." />
+        <Table rowKey="defect" columns={[{ key: 'defect', label: 'Defect' }, { key: 'pieces', label: 'Pieces rejected', num: true }]} rows={defects} empty="No rejections." />
       </Card>
     </div>
   )
@@ -262,7 +264,7 @@ function AuditReport() {
       <div className="filters">
         <select value={table} onChange={(e) => setTable(e.target.value)} aria-label="Table">
           <option value="">All records</option>
-          {['items', 'stock_movements', 'stock_counts', 'orders', 'order_lines', 'production_records', 'qa_inspections', 'or_numbers', 'profiles', 'import_batches'].map((t) => <option key={t}>{t}</option>)}
+          {['items', 'stock_movements', 'stock_counts', 'orders', 'order_lines', 'pieces', 'receipts', 'or_numbers', 'profiles', 'import_batches'].map((t) => <option key={t}>{t}</option>)}
         </select>
       </div>
       <Alert>{log.error}</Alert>
