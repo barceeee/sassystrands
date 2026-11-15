@@ -19,18 +19,19 @@ export default function Labels() {
   const pieces = useLoad(async () => {
     if (!receipt && !serials.length) return []
     const board = await rpc('piece_board', { p_include_closed: true })
-    if (receipt) return board.filter((p) => String(p.receipt_id) === receipt)
-    return serials.map((s) => board.find((p) => p.serial === s)).filter(Boolean)
+    const rows = receipt ? board.filter((p) => String(p.receipt_id) === receipt) : serials.map((s) => board.find((p) => p.serial === s)).filter(Boolean)
+    const ids = [...new Set(rows.map((p) => p.receipt_id).filter(Boolean))]
+    const dates = ids.length ? Object.fromEntries((await must(supabase.from('receipts').select('id, received_at').in('id', ids))).map((r) => [r.id, r.received_at])) : {}
+    return rows.map((p) => ({ ...p, received_at: dates[p.receipt_id] ?? null }))
   }, [key])
-  const rec = useLoad(async () => (receipt ? (await must(supabase.from('receipts').select('id, received_at, qty').eq('id', receipt)))[0] ?? null : null), [receipt])
 
   useEffect(() => {
     document.body.classList.add('printing-labels')
     return () => document.body.classList.remove('printing-labels')
   }, [])
 
-  if (pieces.loading || rec.loading) return <Loading />
-  if (pieces.error || rec.error) return <Alert>{pieces.error ?? rec.error}</Alert>
+  if (pieces.loading) return <Loading />
+  if (pieces.error) return <Alert>{pieces.error}</Alert>
   if (!receipt && !serials.length) return <Page title="Labels"><Alert>Nothing to print. Open this page from a receipt or a piece.</Alert></Page>
 
   const list = pieces.data
@@ -53,7 +54,7 @@ export default function Labels() {
             <div className="label" key={p.id}>
               <Barcode value={p.serial} />
               <div className="label-meta">
-                Received {date(rec.data?.received_at ?? p.stage_since)}
+                {p.received_at && <>Received {date(p.received_at)}</>}
                 {p.item_name && <><br /><b>{p.item_name}</b></>}
                 {p.order_no && <><br />{p.order_no}{p.client_name ? ` · ${p.client_name}` : ''}</>}
               </div>
