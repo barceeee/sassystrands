@@ -12,6 +12,10 @@ const ACCOUNTS = [
   { username: 'inventory', role: 'Inventory', tone: 'blue' },
   { username: 'production', role: 'Production', tone: 'amber' },
   { username: 'qauser', role: 'QA', tone: 'brand' },
+  { username: 'station.rsb', role: 'Station · RSB', tone: 'grey' },
+  { username: 'station.qa', role: 'Station · QA', tone: 'grey' },
+  { username: 'leader.rsb', role: 'Team leader · RSB', tone: 'red' },
+  { username: 'leader.qa', role: 'Team leader · QA', tone: 'red' },
 ]
 
 export default function DevQuickLogin() {
