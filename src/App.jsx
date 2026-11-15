@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './auth.jsx'
 import Layout from './components/Layout.jsx'
-import { Forbidden, Loading } from './components/ui.jsx'
+import { Loading } from './components/ui.jsx'
 import Login from './pages/Login.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Stock from './pages/Stock.jsx'
@@ -31,8 +31,8 @@ import Users from './pages/Users.jsx'
 import Account from './pages/Account.jsx'
 
 function Guard({ perm, children }) {
-  const { can } = useAuth()
-  return can(perm) ? children : <Forbidden />
+  const { can, role } = useAuth()
+  return can(perm) ? children : <Navigate to={homeFor(role)} replace />
 }
 
 export default function App() {
