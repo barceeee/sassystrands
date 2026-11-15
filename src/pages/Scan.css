@@ -1,0 +1,11 @@
+.scan-input {
+  width: 100%; font-size: 1.4rem; padding: 14px 16px; letter-spacing: 0.04em;
+  border: 2px solid var(--brand); border-radius: 12px;
+}
+.scan-input:focus { outline: 3px solid var(--brand-soft); outline-offset: 0; }
+.scan-flash { margin-top: 12px; padding: 14px 16px; border-radius: 12px; font-size: 1.05rem; font-weight: 600; }
+.scan-flash.ok { background: var(--brand-soft); color: var(--brand); }
+.scan-flash.err { background: var(--red-soft); color: var(--red); }
+.scan-log { list-style: none; padding: 0; margin: 0; }
+.scan-log li { display: flex; gap: 10px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.scan-log code { font-weight: 700; }

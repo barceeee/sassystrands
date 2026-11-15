@@ -1,0 +1,18 @@
+.labels { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.label {
+  background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius);
+  padding: 10px 12px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  break-inside: avoid; page-break-inside: avoid;
+}
+.label svg { max-width: 100%; height: auto; }
+.label-meta { font-size: 0.78rem; text-align: center; line-height: 1.25; }
+
+/* Only while the labels page is open (body.printing-labels): print the labels, nothing else. */
+@media print {
+  body.printing-labels .topbar, body.printing-labels .sidebar,
+  body.printing-labels .page-head, body.printing-labels .no-print { display: none !important; }
+  body.printing-labels, body.printing-labels .content { background: #fff; padding: 0; margin: 0; }
+  body.printing-labels .shell { display: block; }
+  body.printing-labels .labels { grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+  body.printing-labels .label { border: 1px solid #ccc; }
+}

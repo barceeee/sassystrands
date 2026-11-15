@@ -16,7 +16,8 @@ export default function ProductionDetail() {
   const rec = useLoad(async () => (await must(supabase.rpc('production_board', { p_id: Number(id) })))[0] ?? null, [id])
   const events = useLoad(() => must(supabase.from('production_events').select('*').eq('production_id', id).order('created_at', { ascending: false }).order('id', { ascending: false })), [id])
   const qa = useLoad(() => must(supabase.from('qa_inspections').select('*').eq('production_id', id).order('inspected_at', { ascending: false })), [id])
-  const reload = () => { rec.reload(); events.reload(); qa.reload() }
+  const units = useLoad(() => must(supabase.from('production_units').select('id, serial').eq('production_id', id).order('id')), [id])
+  const reload = () => { rec.reload(); events.reload(); qa.reload(); units.reload() }
 
   if (rec.loading) return <Loading />
   if (rec.error) return <Alert>{rec.error}</Alert>
@@ -43,6 +44,12 @@ export default function ProductionDetail() {
         <Card title="QA inspection"><QaForm record={r} onSaved={reload} /></Card>
       )}
       {!closed && <MoveRecord record={r} stages={lookups.data?.stages ?? []} locations={lookups.data?.locations ?? []} onSaved={(newId) => (newId && newId !== r.id ? navigate(`/production/${newId}`) : reload())} />}
+
+      <Card title="Pieces & serial numbers" actions={can('production.manage') && (units.data?.length ?? 0) > 0 && <Link className="button" to={`/production/${r.id}/labels`}>Print labels</Link>}>
+        {units.data?.length
+          ? <div className="actions">{units.data.map((u) => <span key={u.id} className="badge badge-grey">{u.serial}</span>)}</div>
+          : <p className="muted">No pieces.</p>}
+      </Card>
 
       <Card title="QA results">
         <Table

@@ -16,6 +16,8 @@ import OrderDetail from './pages/OrderDetail.jsx'
 import Production from './pages/Production.jsx'
 import ProductionNew from './pages/ProductionNew.jsx'
 import ProductionDetail from './pages/ProductionDetail.jsx'
+import ProductionLabels from './pages/ProductionLabels.jsx'
+import Scan from './pages/Scan.jsx'
 import QA from './pages/QA.jsx'
 import OrNumbers from './pages/OrNumbers.jsx'
 import Reports from './pages/Reports.jsx'
@@ -61,6 +63,8 @@ export default function App() {
         <Route path="production" element={<Production />} />
         <Route path="production/new" element={<Guard perm="production.manage"><ProductionNew /></Guard>} />
         <Route path="production/:id" element={<ProductionDetail />} />
+        <Route path="production/:id/labels" element={<Guard perm="production.manage"><ProductionLabels /></Guard>} />
+        <Route path="scan" element={<Scan />} />
         <Route path="qa" element={<Guard perm="qa.view"><QA /></Guard>} />
         <Route path="or-numbers" element={<Guard perm="or.manage"><OrNumbers /></Guard>} />
         <Route path="reports" element={<Guard perm="reports.view"><Reports /></Guard>} />

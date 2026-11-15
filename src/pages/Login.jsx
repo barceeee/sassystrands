@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth.jsx'
 import { Alert } from '../components/ui.jsx'
+import DevQuickLogin from '../components/DevQuickLogin.jsx' // TEMPORARY dev-only quick login
 
 export default function Login() {
   const { signIn } = useAuth()
@@ -8,6 +10,12 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
+
+  // The sign-in screen always sits at "/", so every login lands on the dashboard instead of the
+  // previous user's page (which the new user may not have access to).
+  useEffect(() => { if (pathname !== '/') navigate('/', { replace: true }) }, [pathname, navigate])
 
   const submit = async (e) => {
     e.preventDefault()
@@ -36,6 +44,7 @@ export default function Login() {
         <button className="primary" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
         <p className="muted small">Forgot your password? Ask the Owner or an Admin to reset it.</p>
       </form>
+      <DevQuickLogin />
     </div>
   )
 }
