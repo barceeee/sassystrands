@@ -20,6 +20,13 @@ do $$ begin
     raise exception 'expected check violation for STATION without station';
   exception when check_violation then null;
   end;
+  -- station must be one of the seven real stations
+  begin
+    insert into public.profiles (id, username, full_name, role, station)
+    values ('00000000-0000-0000-0000-0000000000a4', 'bad-test', 'Bad', 'STATION', 'RECEIVED');
+    raise exception 'expected check violation for station RECEIVED';
+  exception when check_violation then null;
+  end;
   -- non-station role with a station must raise too
   begin
     update public.profiles set station = 'RSB' where id = '00000000-0000-0000-0000-0000000000a2';

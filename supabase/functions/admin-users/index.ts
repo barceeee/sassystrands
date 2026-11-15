@@ -9,12 +9,13 @@ import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const ROLES = ["OWNER", "ADMIN", "INVENTORY", "PRODUCTION", "QA", "STATION", "LEADER"];
 const STATION_ROLES = ["STATION", "LEADER"];
+const STATIONS = ["RSB", "WEFTING", "VENT_MARINDUQUE", "VENT_HQ_PCR", "VENT_HQ_FIXING", "CURLING", "FOR_QA"];
 
 // Station roles must name a station; every other role has none.
 function stationFor(role: string, station: unknown): string | null {
   if (!STATION_ROLES.includes(role)) return null;
   const code = String(station ?? "").trim();
-  if (!code) throw new HttpError(400, "Choose a station.");
+  if (!STATIONS.includes(code)) throw new HttpError(400, "Choose a station.");
   return code;
 }
 // Staff sign in with a username; Supabase Auth needs an email, so usernames map to an

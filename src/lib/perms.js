@@ -31,3 +31,6 @@ export const ROLE_LABELS = {
   STATION: 'Station',
   LEADER: 'Team leader',
 }
+
+// Stations where pieces are scanned (RECEIVED is intake, not a station). Mirrors profiles_station_codes.
+export const STATIONS = ['RSB', 'WEFTING', 'VENT_MARINDUQUE', 'VENT_HQ_PCR', 'VENT_HQ_FIXING', 'CURLING', 'FOR_QA']

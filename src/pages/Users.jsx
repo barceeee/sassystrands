@@ -3,7 +3,7 @@ import { supabase } from '../supabase.js'
 import { useAuth } from '../auth.jsx'
 import { useLoad } from '../lib/data.js'
 import { Page, Card, Alert, Loading, Table, Badge, Field, ActionResult, useAction } from '../components/ui.jsx'
-import { ROLE_LABELS, isStationRole } from '../lib/perms.js'
+import { ROLE_LABELS, STATIONS, isStationRole } from '../lib/perms.js'
 import { dateTime } from '../lib/format.js'
 
 const ROLE_HELP = {
@@ -16,14 +16,11 @@ const ROLE_HELP = {
   LEADER: 'Scans at one station and leads that team',
 }
 
-// Stages that are not stations (no one scans at these).
-const NON_STATIONS = ['ALLOCATED', 'REJECTED', 'READY', 'SHIPPED', 'IN_STOCK']
-
 function useStations() {
   const stages = useLoad(async () => {
     const { data, error } = await supabase.from('production_stages').select('code,label,sort_order').order('sort_order')
     if (error) throw error
-    return data.filter((x) => !NON_STATIONS.includes(x.code))
+    return data.filter((x) => STATIONS.includes(x.code))
   }, [])
   return stages.data ?? []
 }
