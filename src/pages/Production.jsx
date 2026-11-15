@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { supabase, must } from '../supabase.js'
-import { useLoad, useLookups } from '../lib/data.js'
-import { Page, Card, Alert, Loading, Table, Badge } from '../components/ui.jsx'
+import { supabase, must, rpc } from '../supabase.js'
+import { useAuth } from '../auth.jsx'
+import { useLoad, useLookups, loadItems } from '../lib/data.js'
+import { Page, Card, Alert, Loading, Table, Badge, Field, ItemPicker, ActionResult, useAction } from '../components/ui.jsx'
 import { qty, dateTime } from '../lib/format.js'
 
 // Read-only progress board. Pieces only move when a station scans them.
@@ -10,6 +11,8 @@ export default function Production() {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const lookups = useLookups()
+  const { can } = useAuth()
+  const receiving = can('receiving.manage')
   const [q, setQ] = useState('')
   const [includeClosed, setIncludeClosed] = useState(false)
   const stage = params.get('stage') ?? ''
@@ -48,6 +51,7 @@ export default function Production() {
         <label><input type="checkbox" checked={includeClosed} onChange={(e) => setIncludeClosed(e.target.checked)} /> Include shipped / in stock / canceled</label>
       </div>
       <Alert>{board.error}</Alert>
+      {receiving && <ReceiveToStock pieces={(board.data ?? []).filter((r) => r.stage === 'READY' && r.status === 'ACTIVE' && r.order_line_id == null)} locations={lookups.data?.locations ?? []} onDone={board.reload} />}
       {board.loading ? <Loading /> : (
         <Card title={`Pieces (${rows.length})`}>
           <Table
@@ -66,5 +70,42 @@ export default function Production() {
         </Card>
       )}
     </Page>
+  )
+}
+
+function ReceiveToStock({ pieces, locations, onDone }) {
+  const items = useLoad(loadItems, [])
+  const [sel, setSel] = useState([])
+  const [item, setItem] = useState(null)
+  const [location, setLocation] = useState('HQ')
+  const action = useAction()
+  const chosen = sel.filter((s) => pieces.some((p) => p.serial === s))
+  const toggle = (serial) => setSel(chosen.includes(serial) ? chosen.filter((s) => s !== serial) : [...chosen, serial])
+  const submit = async (e) => {
+    e.preventDefault()
+    const ok = await action.run(() => rpc('receive_to_stock', { p_serials: chosen, p_item_id: item, p_location: location }),
+      (n) => `Received ${n} piece${n === 1 ? '' : 's'} to stock.`)
+    if (ok) { setSel([]); onDone() }
+  }
+  return (
+    <Card title={`Receive to stock (${pieces.length} ready, not linked to an order)`}>
+      {pieces.length === 0 ? <p className="muted">No ready pieces waiting for stock.</p> : (
+        <form className="form" onSubmit={submit}>
+          <Field label="Pieces" wide>
+            <div>{pieces.map((p) => (
+              <label key={p.serial} style={{ display: 'inline-block', marginRight: 12 }}>
+                <input type="checkbox" checked={chosen.includes(p.serial)} onChange={() => toggle(p.serial)} /> {p.serial}
+              </label>
+            ))}</div>
+          </Field>
+          <Field label="Product" wide><ItemPicker items={items.data} value={item} onChange={setItem} required /></Field>
+          <Field label="Location">
+            <select value={location} onChange={(e) => setLocation(e.target.value)}>{locations.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}</select>
+          </Field>
+          <div className="form-actions"><button className="primary" disabled={action.busy || !item || chosen.length === 0}>Receive {chosen.length} to stock</button></div>
+        </form>
+      )}
+      <ActionResult action={action} />
+    </Card>
   )
 }
