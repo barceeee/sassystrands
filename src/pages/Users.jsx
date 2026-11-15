@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { supabase } from '../supabase.js'
 import { useAuth } from '../auth.jsx'
 import { useLoad } from '../lib/data.js'
-import { Page, Card, Alert, Loading, Table, Badge, Field, ActionResult, useAction } from '../components/ui.jsx'
+import { Page, Card, Alert, Table, Badge, Field, ActionResult, useAction } from '../components/ui.jsx'
+import { CardSkeleton } from '../components/Skeleton.jsx'
 import { ROLE_LABELS, STATIONS, isStationRole } from '../lib/perms.js'
 import { dateTime } from '../lib/format.js'
 
@@ -65,7 +66,7 @@ export default function Users() {
       <Card>
         <ActionResult action={action} />
         <Alert>{users.error}</Alert>
-        {users.loading ? <Loading /> : (
+        {users.loading ? <CardSkeleton cols={6} /> : (
           <Table
             columns={[
               { key: 'full_name', label: 'Name', render: (u) => <>{u.full_name}<div className="muted small">{u.username}{u.email ? ` · ${u.email}` : ''}</div></> },

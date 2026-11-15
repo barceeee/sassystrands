@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, must } from '../supabase.js'
 import { useLookups } from '../lib/data.js'
-import { Page, Card, Field, ActionResult, useAction, Loading } from '../components/ui.jsx'
+import { Page, Card, Field, ActionResult, useAction } from '../components/ui.jsx'
+import { PAGE_SKELETONS } from '../components/pageSkeletons.jsx'
 
 // New product. Products are defined by controlled values, so "DD Manila Curls 16"" can only exist once.
 export default function ItemForm() {
@@ -34,7 +35,7 @@ export default function ItemForm() {
     if (created?.id) navigate(`/inventory/items/${created.id}`)
   }
 
-  if (!L) return <Loading />
+  if (!L) return PAGE_SKELETONS.itemForm
   return (
     <Page title="New product">
       <Card>

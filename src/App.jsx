@@ -1,8 +1,8 @@
-import { lazy, useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './auth.jsx'
 import Layout from './components/Layout.jsx'
-import { Loading } from './components/ui.jsx'
+import { PAGE_SKELETONS, skeletonFor } from './components/pageSkeletons.jsx'
 import Login from './pages/Login.jsx'
 // Pages load on first visit so the first download stays small (Layout shows a loader meanwhile).
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'))
@@ -50,7 +50,7 @@ export default function App() {
       navigate(homeFor(role), { replace: true })
     }
   }, [session, role, navigate])
-  if (loading) return <div className="center-screen"><Loading /></div>
+  if (loading) return <div className="content">{skeletonFor(pathname)}</div>
   if (!session) return <Login />
   if (!profile?.active) {
     return (
@@ -67,30 +67,30 @@ export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={<Dashboard />} />
-        <Route path="inventory" element={<Guard perm="inventory.view"><Stock /></Guard>} />
-        <Route path="inventory/items/new" element={<Guard perm="inventory.manage"><ItemForm /></Guard>} />
-        <Route path="inventory/items/:id" element={<Guard perm="inventory.view"><ItemDetail /></Guard>} />
-        <Route path="inventory/movements" element={<Guard perm="inventory.view"><Movements /></Guard>} />
-        <Route path="inventory/counts" element={<Guard perm="inventory.view"><Counts /></Guard>} />
-        <Route path="inventory/bundles" element={<Guard perm="inventory.view"><Bundles /></Guard>} />
-        <Route path="orders" element={<Guard perm="orders.view"><Orders /></Guard>} />
-        <Route path="orders/new" element={<Guard perm="orders.manage"><OrderForm /></Guard>} />
-        <Route path="orders/:id" element={<Guard perm="orders.view"><OrderDetail /></Guard>} />
-        <Route path="production" element={<Production />} />
-        <Route path="pieces/:serial" element={<Piece />} />
-        <Route path="receiving" element={<Guard perm="receiving.manage"><Receiving /></Guard>} />
-        <Route path="labels" element={<Guard perm="receiving.manage" or="station.lead"><Labels /></Guard>} />
-        <Route path="station" element={<Scanner />} />
-        <Route path="station/overview" element={<Overview />} />
-        <Route path="qa" element={<Guard perm="qa.view"><QA /></Guard>} />
-        <Route path="or-numbers" element={<Guard perm="or.manage"><OrNumbers /></Guard>} />
-        <Route path="reports" element={<Guard perm="reports.view"><Reports /></Guard>} />
-        <Route path="imports" element={<Guard perm="imports.manage"><Imports /></Guard>} />
-        <Route path="imports/:id" element={<Guard perm="imports.manage"><ImportDetail /></Guard>} />
-        <Route path="settings/lookups" element={<Guard perm="lookups.manage"><Lookups /></Guard>} />
-        <Route path="users" element={<Guard perm="users.manage"><Users /></Guard>} />
-        <Route path="account" element={<Account />} />
+        <Route index element={<Suspense fallback={PAGE_SKELETONS.dashboard}><Dashboard /></Suspense>} />
+        <Route path="inventory" element={<Guard perm="inventory.view"><Suspense fallback={PAGE_SKELETONS.stock}><Stock /></Suspense></Guard>} />
+        <Route path="inventory/items/new" element={<Guard perm="inventory.manage"><Suspense fallback={PAGE_SKELETONS.itemForm}><ItemForm /></Suspense></Guard>} />
+        <Route path="inventory/items/:id" element={<Guard perm="inventory.view"><Suspense fallback={PAGE_SKELETONS.itemDetail}><ItemDetail /></Suspense></Guard>} />
+        <Route path="inventory/movements" element={<Guard perm="inventory.view"><Suspense fallback={PAGE_SKELETONS.movements}><Movements /></Suspense></Guard>} />
+        <Route path="inventory/counts" element={<Guard perm="inventory.view"><Suspense fallback={PAGE_SKELETONS.counts}><Counts /></Suspense></Guard>} />
+        <Route path="inventory/bundles" element={<Guard perm="inventory.view"><Suspense fallback={PAGE_SKELETONS.bundles}><Bundles /></Suspense></Guard>} />
+        <Route path="orders" element={<Guard perm="orders.view"><Suspense fallback={PAGE_SKELETONS.orders}><Orders /></Suspense></Guard>} />
+        <Route path="orders/new" element={<Guard perm="orders.manage"><Suspense fallback={PAGE_SKELETONS.orderForm}><OrderForm /></Suspense></Guard>} />
+        <Route path="orders/:id" element={<Guard perm="orders.view"><Suspense fallback={PAGE_SKELETONS.orderDetail}><OrderDetail /></Suspense></Guard>} />
+        <Route path="production" element={<Suspense fallback={PAGE_SKELETONS.production}><Production /></Suspense>} />
+        <Route path="pieces/:serial" element={<Suspense fallback={PAGE_SKELETONS.piece}><Piece /></Suspense>} />
+        <Route path="receiving" element={<Guard perm="receiving.manage"><Suspense fallback={PAGE_SKELETONS.receiving}><Receiving /></Suspense></Guard>} />
+        <Route path="labels" element={<Guard perm="receiving.manage" or="station.lead"><Suspense fallback={PAGE_SKELETONS.labels}><Labels /></Suspense></Guard>} />
+        <Route path="station" element={<Suspense fallback={PAGE_SKELETONS.scanner}><Scanner /></Suspense>} />
+        <Route path="station/overview" element={<Suspense fallback={PAGE_SKELETONS.overview}><Overview /></Suspense>} />
+        <Route path="qa" element={<Guard perm="qa.view"><Suspense fallback={PAGE_SKELETONS.qa}><QA /></Suspense></Guard>} />
+        <Route path="or-numbers" element={<Guard perm="or.manage"><Suspense fallback={PAGE_SKELETONS.orNumbers}><OrNumbers /></Suspense></Guard>} />
+        <Route path="reports" element={<Guard perm="reports.view"><Suspense fallback={PAGE_SKELETONS.reports}><Reports /></Suspense></Guard>} />
+        <Route path="imports" element={<Guard perm="imports.manage"><Suspense fallback={PAGE_SKELETONS.imports}><Imports /></Suspense></Guard>} />
+        <Route path="imports/:id" element={<Guard perm="imports.manage"><Suspense fallback={PAGE_SKELETONS.importDetail}><ImportDetail /></Suspense></Guard>} />
+        <Route path="settings/lookups" element={<Guard perm="lookups.manage"><Suspense fallback={PAGE_SKELETONS.lookups}><Lookups /></Suspense></Guard>} />
+        <Route path="users" element={<Guard perm="users.manage"><Suspense fallback={PAGE_SKELETONS.users}><Users /></Suspense></Guard>} />
+        <Route path="account" element={<Suspense fallback={PAGE_SKELETONS.account}><Account /></Suspense>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

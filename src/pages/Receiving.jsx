@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase, rpc } from '../supabase.js'
 import { useLoad, fetchAll, useStaff } from '../lib/data.js'
 import { dateTime } from '../lib/format.js'
-import { Page, Card, Field, Table, Alert, Loading, ActionResult, useAction } from '../components/ui.jsx'
+import { Page, Card, Field, Table, Alert, ActionResult, useAction } from '../components/ui.jsx'
+import { CardSkeleton } from '../components/Skeleton.jsx'
 
 // Inventory records raw hair arriving at HQ: each unit becomes a piece with its own serial, then labels are printed.
 export default function Receiving() {
@@ -43,7 +44,7 @@ export default function Receiving() {
       </Card>
       <Card title="Receipts">
         <Alert>{receipts.error}</Alert>
-        {receipts.loading && !receipts.data ? <Loading /> : <Table columns={columns} rows={receipts.data} empty="Nothing received yet." />}
+        {receipts.loading && !receipts.data ? <CardSkeleton cols={4} /> : <Table columns={columns} rows={receipts.data} empty="Nothing received yet." />}
       </Card>
     </Page>
   )

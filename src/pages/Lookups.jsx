@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { supabase, must } from '../supabase.js'
 import { useLoad, loadLookups } from '../lib/data.js'
-import { Page, Card, Alert, Loading, Table, Field, ActionResult, useAction } from '../components/ui.jsx'
+import { Page, Card, Alert, Table, Field, ActionResult, useAction } from '../components/ui.jsx'
+import { PAGE_SKELETONS } from '../components/pageSkeletons.jsx'
 import './Lookups.css'
 
 // Controlled lists used everywhere instead of free text. Codes are permanent; labels and
@@ -18,7 +19,7 @@ const breakable = (code) => code.split('_').flatMap((part, i) => (i ? [<wbr key=
 
 export default function Lookups() {
   const data = useLoad(() => loadLookups(true), [])
-  if (data.loading) return <Loading />
+  if (data.loading) return PAGE_SKELETONS.lookups
   return (
     <Page title="Lists & locations" subtitle="The fixed choices staff pick from. Spelling variants in imported sheets are mapped onto these.">
       <Alert>{data.error}</Alert>

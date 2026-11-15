@@ -3,7 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import { supabase, must, rpc } from '../supabase.js'
 import { useAuth } from '../auth.jsx'
 import { useLoad, useLookups, loadItems, fetchAll } from '../lib/data.js'
-import { Page, Card, Alert, Loading, Table, Badge, Field, ItemPicker, ActionResult, useAction } from '../components/ui.jsx'
+import { Page, Card, Alert, Table, Badge, Field, ItemPicker, ActionResult, useAction } from '../components/ui.jsx'
+import { PAGE_SKELETONS } from '../components/pageSkeletons.jsx'
 import { date, money, today } from '../lib/format.js'
 import { normaliseSerial } from '../lib/scan.js'
 
@@ -38,7 +39,7 @@ export default function OrderDetail() {
   const action = useAction()
   const reload = () => { order.reload(); lines.reload(); pieces.reload(); unlinkedPieces.reload() }
 
-  if (order.loading) return <Loading />
+  if (order.loading) return PAGE_SKELETONS.orderDetail
   if (order.error) return <Alert>{order.error}</Alert>
   const o = order.data
   const myPieces = pieces.data ?? []

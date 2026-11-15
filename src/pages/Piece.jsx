@@ -3,7 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import { supabase, must, rpc } from '../supabase.js'
 import { useAuth } from '../auth.jsx'
 import { useLoad, useLookups, useStaff } from '../lib/data.js'
-import { Page, Card, Alert, Loading, Table, Badge, Field, ActionResult, useAction } from '../components/ui.jsx'
+import { Page, Card, Alert, Table, Badge, Field, ActionResult, useAction } from '../components/ui.jsx'
+import { PAGE_SKELETONS } from '../components/pageSkeletons.jsx'
 import FixPieceModal from '../components/FixPieceModal.jsx'
 import { dateTime, titleCase, PRODUCT_NOT_SET } from '../lib/format.js'
 
@@ -37,7 +38,7 @@ export default function Piece() {
   }, [serial])
 
   const title = serial.toUpperCase()
-  if (piece.loading && !piece.data) return <Page title={title}><Loading /></Page>
+  if (piece.loading && !piece.data) return PAGE_SKELETONS.piece
   if (piece.error) return <Page title={title}><Alert>{piece.error}</Alert></Page>
   if (!piece.data) return <Page title={title}><Alert>No piece with serial {title}. <Link to="/production">Back to production</Link></Alert></Page>
 

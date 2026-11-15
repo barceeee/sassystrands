@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase, must } from '../supabase.js'
 import { useLoad, useStaff, fetchAll } from '../lib/data.js'
-import { Page, Card, Alert, Loading, Table, Badge, Tabs } from '../components/ui.jsx'
+import { Page, Card, Alert, Table, Badge, Tabs } from '../components/ui.jsx'
+import { CardSkeleton } from '../components/Skeleton.jsx'
 import { money, qty, dateTime, titleCase, downloadCsv } from '../lib/format.js'
 
 const TABS = [
@@ -42,7 +43,7 @@ function group(rows, keyFn, init, add) {
 function StockReport() {
   const stock = useLoad(() => fetchAll(() => supabase.from('v_stock_on_hand').select('*')), [])
   const bundles = useLoad(() => must(supabase.from('v_sale_bundles').select('price, status')), [])
-  if (stock.loading) return <Loading />
+  if (stock.loading) return <CardSkeleton cols={6} rows={8} />
   const rows = stock.data ?? []
   const groups = group(rows, (r) => `${r.category}|${r.draw ?? r.lace_type}|${r.style_label}`,
     (r) => ({ key: `${r.category}|${r.draw ?? r.lace_type}|${r.style_label}`, category: r.category, kind: r.draw ?? r.lace_type, style: r.style_label, products: 0, units: 0, value: 0, unpriced: 0 }),
@@ -119,7 +120,7 @@ function MovementReport() {
         <label>To <input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></label>
       </div>
       <Alert>{data.error}</Alert>
-      {data.loading ? <Loading /> : (
+      {data.loading ? <CardSkeleton cols={6} /> : (
         <Table
           columns={[
             { key: 'name', label: 'Product', render: (r) => <Link to={`/inventory/items/${r.id}`}>{r.name}</Link> },
@@ -139,7 +140,7 @@ function MovementReport() {
 
 function OrderReport() {
   const orders = useLoad(() => fetchAll(() => supabase.from('v_orders').select('*').order('client_name')), [])
-  if (orders.loading) return <Loading />
+  if (orders.loading) return <CardSkeleton cols={6} rows={8} />
   const rows = (orders.data ?? []).filter((o) => o.status !== 'CANCELED')
   const byStatus = group(rows, (o) => o.fulfillment_status, (o) => ({ status: o.fulfillment_status, orders: 0, ordered: 0, shipped: 0, value: 0 }),
     (g, o) => { g.orders++; g.ordered += o.qty_ordered; g.shipped += o.qty_shipped; g.value += Number(o.order_value) })
@@ -183,7 +184,7 @@ function ProductionReport() {
     ])
     return { board, qa }
   }, [])
-  if (data.loading) return <Loading />
+  if (data.loading) return <CardSkeleton cols={6} rows={8} />
   if (data.error) return <Alert>{data.error}</Alert>
   const stages = group(data.data.board, (r) => r.stage, (r) => ({ stage: r.stage, label: r.stage_label, sort: r.stage_sort, active: 0, onHold: 0, canceled: 0 }),
     (g, r) => { if (r.status === 'ACTIVE') g.active += r.pieces; else if (r.status === 'ON_HOLD') g.onHold += r.pieces; else g.canceled += r.pieces })
@@ -224,7 +225,7 @@ function ProductionReport() {
 
 function ReconcileReport() {
   const counts = useLoad(() => fetchAll(() => supabase.from('v_count_variance').select('source, source_label, count_date, counted_qty, computed_qty, variance, unit_price')), [])
-  if (counts.loading) return <Loading />
+  if (counts.loading) return <CardSkeleton cols={6} rows={8} />
   const rows = group(counts.data ?? [], (c) => `${c.source}|${c.source_label}|${c.count_date}`,
     (c) => ({ key: `${c.source}|${c.source_label}|${c.count_date}`, source: c.source, label: c.source_label, date: c.count_date, lines: 0, counted: 0, computed: 0, off: 0, sheetValue: 0 }),
     (g, c) => { g.lines++; g.counted += c.counted_qty; g.computed += c.computed_qty; g.off += c.variance ? 1 : 0; g.sheetValue += c.counted_qty * Number(c.unit_price ?? 0) })
@@ -268,7 +269,7 @@ function AuditReport() {
         </select>
       </div>
       <Alert>{log.error}</Alert>
-      {log.loading ? <Loading /> : (
+      {log.loading ? <CardSkeleton cols={6} /> : (
         <Table columns={[
           { key: 'at', label: 'When', render: (e) => dateTime(e.at) },
           { key: 'actor', label: 'Who', render: (e) => staff[e.actor] ?? (e.actor ? 'Unknown user' : 'System / import') },

@@ -1,0 +1,31 @@
+/* Skeleton loaders: placeholder bars inside the real page blocks (.page-head, .stat, .card),
+   so a loading page has the same shape and surfaces as the loaded one. */
+.sk-bar {
+  display: block;
+  height: 0.85em;
+  border-radius: var(--ss-radius-sm);
+  background: linear-gradient(90deg, var(--ss-color-tint) 25%, var(--ss-color-line) 50%, var(--ss-color-tint) 75%);
+  background-size: 300% 100%;
+  animation: sk-shimmer 1.4s var(--ss-motion-ease) infinite;
+}
+.sk-bar.sk-title { height: 1.6em; width: 14em; max-width: 70%; }
+.sk-bar.sk-sub { width: 22em; max-width: 90%; margin-top: var(--ss-space-2); }
+.sk-bar.sk-btn { height: var(--ss-size-control, 2.4em); width: 7em; border-radius: var(--ss-radius-md); }
+.sk-bar.sk-num { height: 1.5em; width: 3.5em; margin-top: var(--ss-space-2); }
+.sk-bar.sk-input { height: var(--ss-size-control, 2.4em); border-radius: var(--ss-radius-md); margin-top: 6px; }
+.sk-bar.sk-tab { height: 2.2em; width: 8.5em; border-radius: var(--ss-radius-pill); }
+.sk-bar.sk-big { height: 3.4em; border-radius: var(--ss-radius-lg); }
+
+.sk-table { display: grid; gap: var(--ss-space-3); }
+.sk-row { display: grid; gap: var(--ss-space-4); grid-template-columns: repeat(var(--sk-cols), minmax(0, 1fr)); align-items: center; }
+.sk-row.sk-head .sk-bar { width: 55%; opacity: 0.7; }
+.sk-row + .sk-row { padding-top: var(--ss-space-3); border-top: 1px solid var(--ss-color-tint); }
+
+.sk-labels { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.sk-labels .card { display: grid; gap: var(--ss-space-2); justify-items: center; }
+
+.sk-page { display: grid; gap: var(--ss-layout-gap, var(--ss-space-5)); }
+.sk-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@keyframes sk-shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+@media (prefers-reduced-motion: reduce) { .sk-bar { animation: none; } }
