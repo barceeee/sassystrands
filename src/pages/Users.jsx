@@ -9,9 +9,9 @@ import { dateTime } from '../lib/format.js'
 const ROLE_HELP = {
   OWNER: 'Everything, including users',
   ADMIN: 'Same as Owner',
-  INVENTORY: 'Everything except user management',
-  PRODUCTION: 'Production records and stages only',
-  QA: 'View production; record QA inspections',
+  INVENTORY: 'Everything except user management; receives hair, links, ships and stocks pieces',
+  PRODUCTION: 'Watches production progress (view only)',
+  QA: 'Watches production and QA results (view only)',
   STATION: 'Scans pieces in and out at one station',
   LEADER: 'Scans at one station and leads that team',
 }
@@ -22,7 +22,8 @@ function useStations() {
     if (error) throw error
     return data.filter((x) => STATIONS.includes(x.code))
   }, [])
-  return stages.data ?? []
+  // ready: station list loaded, so role changes that need a station can pick one.
+  return { list: stages.data ?? [], ready: !!stages.data, error: stages.error }
 }
 
 function StationSelect({ stations, value, onChange, disabled, label }) {
@@ -51,13 +52,15 @@ export default function Users() {
   const users = useLoad(async () => (await adminUsers({ action: 'list' })).users, [])
   const action = useAction()
   const [resetting, setResetting] = useState(null)
-  const stations = useStations()
+  const stationLoad = useStations()
+  const stations = stationLoad.list
 
   const update = (u, patch, msg) => action.run(async () => { await adminUsers({ action: 'update', id: u.id, ...patch }); users.reload() }, msg)
 
   return (
     <Page title="Users" subtitle="Staff sign in with a username. Each role sees only its own modules.">
-      <NewUser onSaved={users.reload} stations={stations} />
+      <Alert>{stationLoad.error && `Could not load the station list: ${stationLoad.error}`}</Alert>
+      <NewUser onSaved={users.reload} stations={stations} stationsReady={stationLoad.ready} />
       {resetting && <ResetPassword user={resetting} onClose={() => setResetting(null)} />}
       <Card>
         <ActionResult action={action} />
@@ -67,7 +70,7 @@ export default function Users() {
             columns={[
               { key: 'full_name', label: 'Name', render: (u) => <>{u.full_name}<div className="muted small">{u.username}{u.email ? ` · ${u.email}` : ''}</div></> },
               { key: 'role', label: 'Role', render: (u) => (
-                <select value={u.role} disabled={u.id === profile.id || action.busy} onChange={(e) => update(u, { role: e.target.value, ...(isStationRole(e.target.value) ? { station: u.station ?? stations[0]?.code } : {}) }, `${u.full_name} is now ${ROLE_LABELS[e.target.value]}.`)} aria-label={`Role for ${u.full_name}`}>
+                <select value={u.role} disabled={u.id === profile.id || action.busy || !stationLoad.ready} onChange={(e) => update(u, { role: e.target.value, ...(isStationRole(e.target.value) ? { station: u.station ?? stations[0]?.code } : {}) }, `${u.full_name} is now ${ROLE_LABELS[e.target.value]}.`)} aria-label={`Role for ${u.full_name}`}>
                   {Object.keys(ROLE_LABELS).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
                 </select>
               ) },
@@ -97,7 +100,7 @@ export default function Users() {
   )
 }
 
-function NewUser({ onSaved, stations }) {
+function NewUser({ onSaved, stations, stationsReady }) {
   const [f, setF] = useState({ username: '', full_name: '', role: 'PRODUCTION', station: '', password: '', email: '' })
   const action = useAction()
   const submit = async (e) => {
@@ -111,7 +114,7 @@ function NewUser({ onSaved, stations }) {
         <Field label="Full name"><input value={f.full_name} onChange={(e) => setF({ ...f, full_name: e.target.value })} required /></Field>
         <Field label="Username" hint="Lowercase letters, numbers, . _ -"><input value={f.username} onChange={(e) => setF({ ...f, username: e.target.value.toLowerCase() })} pattern="[a-z0-9._\-]{3,32}" required /></Field>
         <Field label="Role" hint={ROLE_HELP[f.role]}>
-          <select value={f.role} onChange={(e) => setF({ ...f, role: e.target.value })}>
+          <select value={f.role} disabled={!stationsReady} onChange={(e) => setF({ ...f, role: e.target.value })}>
             {Object.keys(ROLE_LABELS).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
           </select>
         </Field>
