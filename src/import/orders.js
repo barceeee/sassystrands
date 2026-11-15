@@ -7,7 +7,7 @@ import { readCell, text, numberCell, addr, Flags, rowSnapshot } from './cells.js
 import { parseDescription, parseLength, itemKey } from './describe.js'
 
 const STAGE_HEADERS = [
-  [/ALLOCATED/, 'ALLOCATED'],
+  [/ALLOCATED/, 'RECEIVED'],
   [/MARINDUQUE/, 'VENT_MARINDUQUE'],
   [/FIXING|CHECKING/, 'VENT_HQ_FIXING'],
   [/PCR/, 'VENT_HQ_PCR'],
